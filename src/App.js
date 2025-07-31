@@ -1,25 +1,46 @@
-import logo from './logo.svg';
-import './App.css';
+import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import LoginPage from "./pages/Login";
+import { initializeApiUrl } from "./utils/apiConfig";
+import PrivateRoute from "./components/PrivateRoute";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import StudentDashboard from "./pages/student/StudentDashboard";
+import FacultyDashboard from "./pages/faculty/FacultyDashboard";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+	// Initialize encrypted API URL in session storage when app starts
+	useEffect(() => {
+		initializeApiUrl();
+	}, []);
+	return (
+		<Routes>
+			<Route path="/" element={<LoginPage />} />
+			{/* <Route
+				path="/AdminDashboard"
+				element={
+					<PrivateRoute allowedRole="Admin">
+						<AdminDashboard />
+					</PrivateRoute>
+				}
+			/>
+			<Route
+				path="/StudentDashboard"
+				element={
+					<PrivateRoute allowedRole="Student">
+						<StudentDashboard />
+					</PrivateRoute>
+				}
+			/> */}
+			<Route
+				path="/FacultyDashboard"
+				element={
+					<PrivateRoute allowedRole="Faculty">
+						<FacultyDashboard />
+					</PrivateRoute>
+				}
+			/>
+		</Routes>
+	);
 }
 
 export default App;

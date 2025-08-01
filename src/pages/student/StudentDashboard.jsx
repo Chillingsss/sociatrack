@@ -3,7 +3,7 @@ import {
 	getProfile,
 	getPostsWithUserReactions,
 	createPost,
-  getPosts,
+	getPosts,
 } from "../../utils/faculty";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
@@ -11,6 +11,7 @@ import CryptoJS from "crypto-js";
 import { getDecryptedApiUrl } from "../../utils/apiConfig";
 import Feed from "../../components/Feed";
 import AvatarDropdown from "../../components/AvatarDropdown";
+import RefreshButton from "../../components/RefreshButton";
 
 export default function StudentDashboard() {
 	const [caption, setCaption] = useState("");
@@ -154,10 +155,27 @@ export default function StudentDashboard() {
 		navigate("/sociatrack");
 	};
 
+	const handleRefresh = () => {
+		// Refresh posts
+		fetchPosts();
+
+		// Refresh profile data
+		if (userId) {
+			getProfile(userId)
+				.then((profileData) => {
+					setProfile(profileData);
+				})
+				.catch((error) => {
+					console.error("Error fetching profile:", error);
+					setProfile(null);
+				});
+		}
+	};
+
 	return (
 		<div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
 			{/* Top Bar with Avatar and Mobile Menu */}
-			<div className="flex sticky top-0 z-40 justify-between items-center px-4 py-4 w-full bg-gray-100 border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700 md:px-8">
+			<div className="flex sticky top-0 z-40 justify-between items-center px-4 py-2 w-full bg-gray-100 dark:bg-gray-900 md:px-8">
 				{/* Left side - Menu button and Logo on mobile */}
 				<div className="flex gap-4 items-center md:hidden">
 					{/* Mobile Menu Button */}
@@ -199,12 +217,18 @@ export default function StudentDashboard() {
 					/>
 				</div>
 
-				{/* Avatar Dropdown */}
-				<AvatarDropdown
-					profile={profile}
-					onLogout={handleLogout}
-					userRole="Student"
-				/>
+				{/* Right side - Refresh button and Avatar */}
+				<div className="flex gap-3 items-center">
+					{/* Refresh Button */}
+					<RefreshButton onRefresh={handleRefresh} />
+
+					{/* Avatar Dropdown */}
+					<AvatarDropdown
+						profile={profile}
+						onLogout={handleLogout}
+						userRole="Student"
+					/>
+				</div>
 			</div>
 
 			{/* Mobile Menu Overlay */}
@@ -255,7 +279,7 @@ export default function StudentDashboard() {
 
 			<div className="flex flex-1 gap-6 px-2 py-4 mx-auto w-full max-w-7xl">
 				{/* Left Sidebar */}
-				<aside className="hidden flex-col p-4 mt-4 w-64 bg-white rounded-2xl shadow md:flex dark:bg-gray-800 h-fit">
+				<aside className="hidden flex-col p-4 mt-4 w-64 bg-white rounded-2xl shadow md:flex dark:bg-gray-800 sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto">
 					<h2 className="mb-4 text-xl font-bold text-gray-700 dark:text-gray-200">
 						Menu
 					</h2>
@@ -337,7 +361,7 @@ export default function StudentDashboard() {
 				</main>
 
 				{/* Right Sidebar */}
-				<aside className="hidden flex-col p-4 mt-4 w-64 bg-white rounded-2xl shadow lg:flex dark:bg-gray-800 h-fit">
+				<aside className="hidden flex-col p-4 mt-4 w-64 bg-white rounded-2xl shadow lg:flex dark:bg-gray-800 sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto">
 					<h2 className="mb-4 text-xl font-bold text-gray-700 dark:text-gray-200">
 						Contacts
 					</h2>

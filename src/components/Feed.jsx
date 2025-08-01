@@ -723,7 +723,6 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 						className="ml-10 text-sm font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
 					>
 						View all {comments.length} comment{comments.length > 1 ? "s" : ""}{" "}
-						in modal
 					</button>
 				)}
 			</div>

@@ -84,7 +84,7 @@ export const formatTimeAgo = (dateString) => {
 		return "Just now";
 	}
 
-	if (diffInSeconds < 60) {
+	if (diffInSeconds < 90) {
 		return diffInSeconds === 1
 			? "1 second ago"
 			: `${diffInSeconds} seconds ago`;

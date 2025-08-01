@@ -14,7 +14,7 @@ function App() {
 	}, []);
 	return (
 		<Routes>
-			<Route path="/" element={<LoginPage />} />
+			<Route path="/sociatrack" element={<LoginPage />} />
 			{/* <Route
 				path="/AdminDashboard"
 				element={

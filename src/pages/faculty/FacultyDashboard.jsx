@@ -139,17 +139,17 @@ export default function FacultyDashboard() {
 		).forEach((name) => {
 			document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
 		});
-		navigate("/");
+		navigate("/sociatrack");
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
+		<div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
 			{/* Top Bar with Avatar and Mobile Menu */}
-			<div className="w-full flex justify-between items-center px-4 py-4 md:px-8 ">
+			<div className="flex justify-between items-center px-4 py-4 w-full md:px-8">
 				{/* Mobile Menu Button */}
 				<button
 					onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-					className="md:hidden flex items-center p-2 rounded-lg bg-gray-100 dark:bg-gray-700 shadow"
+					className="flex items-center p-2 bg-gray-100 rounded-lg shadow md:hidden dark:bg-gray-700"
 				>
 					<svg
 						className="w-6 h-6 text-gray-600 dark:text-gray-300"
@@ -167,7 +167,7 @@ export default function FacultyDashboard() {
 				</button>
 
 				{/* Desktop Title - Hidden on mobile */}
-				<h1 className="hidden md:block text-xl font-bold text-gray-800 dark:text-gray-200">
+				<h1 className="hidden text-xl font-bold text-gray-800 md:block dark:text-gray-200">
 					Faculty Dashboard
 				</h1>
 
@@ -186,18 +186,18 @@ export default function FacultyDashboard() {
 								)}`
 							}
 							alt="Avatar"
-							className="h-10 w-10 rounded-full border-2 border-green-600 shadow"
+							className="w-10 h-10 rounded-full border-2 border-green-600 shadow"
 						/>
 					</button>
 					{dropdownOpen && (
-						<div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50">
-							<div className="px-4 py-2 text-gray-800 dark:text-gray-100 font-semibold border-b dark:border-gray-700">
+						<div className="absolute right-0 z-50 mt-2 w-40 bg-white rounded-lg shadow-lg dark:bg-gray-800">
+							<div className="px-4 py-2 font-semibold text-gray-800 border-b dark:text-gray-100 dark:border-gray-700">
 								{profile?.user_firstname + " " + profile?.user_lastname ||
 									"Faculty"}
 							</div>
 							<button
 								onClick={handleLogout}
-								className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+								className="px-4 py-2 w-full text-left text-red-600 rounded-b-lg hover:bg-gray-100 dark:hover:bg-gray-700"
 							>
 								Logout
 							</button>
@@ -218,13 +218,13 @@ export default function FacultyDashboard() {
 					}`}
 					ref={mobileMenuRef}
 				>
-					<div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+					<div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
 						<h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">
 							Menu
 						</h2>
 						<button
 							onClick={() => setMobileMenuOpen(false)}
-							className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+							className="p-2 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700"
 						>
 							<svg
 								className="w-6 h-6 text-gray-600 dark:text-gray-300"
@@ -242,44 +242,44 @@ export default function FacultyDashboard() {
 						</button>
 					</div>
 					<div className="p-4 space-y-3">
-						<button className="w-full py-3 px-4 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors duration-200">
+						<button className="px-4 py-3 w-full font-semibold text-white bg-green-600 rounded-lg transition-colors duration-200 hover:bg-green-700">
 							Attendance
 						</button>
-						<button className="w-full py-3 px-4 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors duration-200">
+						<button className="px-4 py-3 w-full font-semibold text-white bg-blue-600 rounded-lg transition-colors duration-200 hover:bg-blue-700">
 							Tally
 						</button>
 					</div>
 				</div>
 			</div>
 
-			<div className="flex flex-1 w-full max-w-7xl mx-auto py-4 px-2 gap-6">
+			<div className="flex flex-1 gap-6 px-2 py-4 mx-auto w-full max-w-7xl">
 				{/* Left Sidebar */}
-				<aside className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 rounded-2xl shadow p-4 h-fit mt-4">
-					<h2 className="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200">
+				<aside className="hidden flex-col p-4 mt-4 w-64 bg-white rounded-2xl shadow md:flex dark:bg-gray-800 h-fit">
+					<h2 className="mb-4 text-xl font-bold text-gray-700 dark:text-gray-200">
 						Menu
 					</h2>
-					<button className="w-full py-2 mb-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition">
+					<button className="py-2 mb-2 w-full font-semibold text-white bg-green-600 rounded-lg transition hover:bg-green-700">
 						Attendance
 					</button>
-					<button className="w-full py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+					<button className="py-2 w-full font-semibold text-white bg-blue-600 rounded-lg transition hover:bg-blue-700">
 						Tally
 					</button>
 				</aside>
 
 				{/* Main Feed */}
-				<main className="flex-1 max-w-2xl mx-auto">
+				<main className="flex-1 mx-auto max-w-2xl">
 					{/* Post Creation */}
-					<div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 mb-6">
+					<div className="p-6 mb-6 bg-white rounded-2xl shadow dark:bg-gray-800">
 						<form onSubmit={handlePost} className="flex flex-col gap-4">
 							<textarea
-								className="w-full rounded-lg border border-gray-300 dark:border-gray-700 p-3 resize-none bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+								className="p-3 w-full text-gray-900 bg-gray-50 rounded-lg border border-gray-300 resize-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
 								placeholder="What's on your mind?"
 								value={caption}
 								onChange={(e) => setCaption(e.target.value)}
 								rows={2}
 							/>
-							<div className="flex items-center gap-3">
-								<label className="cursor-pointer text-blue-600 dark:text-blue-400 font-semibold">
+							<div className="flex gap-3 items-center">
+								<label className="font-semibold text-blue-600 cursor-pointer dark:text-blue-400">
 									<input
 										type="file"
 										accept="image/*"
@@ -295,12 +295,12 @@ export default function FacultyDashboard() {
 											<img
 												src={preview}
 												alt={`Preview ${index + 1}`}
-												className="h-12 w-12 object-cover rounded-lg border"
+												className="object-cover w-12 h-12 rounded-lg border"
 											/>
 											<button
 												type="button"
 												onClick={() => removeImage(index)}
-												className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+												className="absolute top-0 right-0 p-1 text-white bg-red-500 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100"
 												title="Remove image"
 											>
 												<svg
@@ -322,7 +322,7 @@ export default function FacultyDashboard() {
 								</div>
 								<button
 									type="submit"
-									className="ml-auto px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
+									className="px-4 py-2 ml-auto font-semibold text-white bg-green-600 rounded-lg transition hover:bg-green-700"
 									disabled={isPosting}
 								>
 									{isPosting ? "Posting..." : "Post"}
@@ -336,8 +336,8 @@ export default function FacultyDashboard() {
 				</main>
 
 				{/* Right Sidebar */}
-				<aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-gray-800 rounded-2xl shadow p-4 h-fit mt-4">
-					<h2 className="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200">
+				<aside className="hidden flex-col p-4 mt-4 w-64 bg-white rounded-2xl shadow lg:flex dark:bg-gray-800 h-fit">
+					<h2 className="mb-4 text-xl font-bold text-gray-700 dark:text-gray-200">
 						Contacts
 					</h2>
 					<div className="text-gray-500 dark:text-gray-400">

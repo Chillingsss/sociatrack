@@ -146,25 +146,29 @@ export default function LoginPage() {
 	return (
 		<>
 			<Toaster position="top-right" />
-			<div className="min-h-screen bg-gradient-to-br from-green-950 via-green-900 to-green-800 flex">
+			<div className="flex min-h-screen bg-gradient-to-br via-green-900 to-green-800 from-green-950">
 				{/* Left Panel - Branding */}
-				<div className="hidden lg:flex lg:w-1/2 relative items-center justify-center">
-					<div className="text-center text-white z-10">
+				<div className="hidden relative justify-center items-center lg:flex lg:w-1/2">
+					<div className="z-10 text-center text-white">
 						<div className="mb-8">
-							<div className="inline-flex items-center justify-center w-24 h-24 mb-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-								<Shield className="w-12 h-12 text-green-400" />
+							<div className="inline-flex justify-center items-center mb-6 w-24 h-24 rounded-2xl border backdrop-blur-sm bg-white/10 border-white/20">
+								<img
+									src="/images/cocLogo.png"
+									alt="PHINMA Cagayan de Oro College Logo"
+									className="object-contain w-16 h-16"
+								/>
 							</div>
-							<h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-green-400 to-lime-400 bg-clip-text text-transparent">
+							<h1 className="mb-2 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-lime-400">
 								PHINMA
 							</h1>
-							<h2 className="text-2xl font-semibold mb-1 text-white">
+							<h2 className="mb-1 text-2xl font-semibold text-white">
 								Cagayan de Oro College
 							</h2>
-							<p className="text-green-200 text-lg">Social Media System</p>
+							<p className="text-lg text-green-200">Social Media System</p>
 						</div>
 
 						<div className="space-y-4 max-w-md">
-							<div className="flex items-center space-x-3 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+							<div className="flex items-center p-4 space-x-3 rounded-xl border backdrop-blur-sm bg-white/5 border-white/10">
 								<Shield className="w-6 h-6 text-lime-400" />
 								<div className="text-left">
 									<h3 className="font-semibold text-white">
@@ -178,23 +182,27 @@ export default function LoginPage() {
 				</div>
 
 				{/* Right Panel - Login Form */}
-				<div className="flex-1 flex items-center justify-center p-8">
+				<div className="flex flex-1 justify-center items-center p-8">
 					<div className="w-full max-w-md">
 						{/* Mobile Header */}
-						<div className="text-center mb-8 lg:hidden">
-							<div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-								<Shield className="w-8 h-8 text-green-400" />
+						<div className="mb-8 text-center lg:hidden">
+							<div className="inline-flex justify-center items-center mb-4 w-16 h-16 rounded-xl border backdrop-blur-sm bg-white/10 border-white/20">
+								<img
+									src="/images/cocLogo.png"
+									alt="PHINMA Cagayan de Oro College Logo"
+									className="object-contain w-10 h-10"
+								/>
 							</div>
-							<h1 className="text-2xl font-bold mb-1 bg-gradient-to-r from-green-400 to-lime-400 bg-clip-text text-transparent">
+							<h1 className="mb-1 text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-lime-400">
 								PHINMA
 							</h1>
-							<p className="text-white text-sm">Cagayan de Oro College</p>
+							<p className="text-sm text-white">Cagayan de Oro College</p>
 						</div>
 
 						{/* Login Card */}
-						<div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-8 shadow-2xl">
-							<div className="text-center mb-8">
-								<h2 className="text-2xl font-bold text-white mb-2">
+						<div className="p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
+							<div className="mb-8 text-center">
+								<h2 className="mb-2 text-2xl font-bold text-white">
 									Welcome Back
 								</h2>
 								<p className="text-green-200">Sign in to your account</p>
@@ -202,7 +210,7 @@ export default function LoginPage() {
 
 							{/* Error Message */}
 							{error && (
-								<div className="flex items-start p-4 mb-6 space-x-3 bg-green-900/30 backdrop-blur-sm rounded-xl border border-green-500/20">
+								<div className="flex items-start p-4 mb-6 space-x-3 rounded-xl border backdrop-blur-sm bg-green-900/30 border-green-500/20">
 									<AlertCircle className="w-5 h-5 text-lime-400 mt-0.5 flex-shrink-0" />
 									<div>
 										<p className="text-sm font-medium text-green-300">
@@ -230,11 +238,11 @@ export default function LoginPage() {
 												setUsername(e.target.value);
 												setError("");
 											}}
-											placeholder="Enter your Student ID or Employee ID"
-											className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all duration-200"
+											placeholder=""
+											className="px-4 py-3 w-full placeholder-white text-white rounded-xl border backdrop-blur-sm transition-all duration-200 bg-white/10 border-white/20 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
 											required
 										/>
-										<Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-300" />
+										<Mail className="absolute right-3 top-1/2 w-5 h-5 text-green-300 transform -translate-y-1/2" />
 									</div>
 								</div>
 
@@ -254,14 +262,14 @@ export default function LoginPage() {
 												setPassword(e.target.value);
 												setError("");
 											}}
-											placeholder="Enter your password"
-											className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all duration-200"
+											placeholder=""
+											className="px-4 py-3 w-full placeholder-white text-white rounded-xl border backdrop-blur-sm transition-all duration-200 bg-white/10 border-white/20 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
 											required
 										/>
 										<button
 											type="button"
 											onClick={() => setShowPassword(!showPassword)}
-											className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-300 hover:text-green-200 transition-colors"
+											className="absolute right-3 top-1/2 text-green-300 transition-colors transform -translate-y-1/2 hover:text-green-200"
 										>
 											{showPassword ? (
 												<EyeOff className="w-5 h-5" />
@@ -274,7 +282,7 @@ export default function LoginPage() {
 
 								{/* CAPTCHA Component */}
 								{showCaptcha && (
-									<div className="p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+									<div className="p-4 rounded-xl border backdrop-blur-sm bg-white/5 border-white/10">
 										<Captcha
 											onVerify={handleCaptchaVerify}
 											error={captchaError}
@@ -292,19 +300,19 @@ export default function LoginPage() {
 									disabled={isLoading || (showCaptcha && !captchaVerified)}
 								>
 									{isLoading ? (
-										<div className="flex items-center justify-center space-x-2">
-											<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+										<div className="flex justify-center items-center space-x-2">
+											<div className="w-5 h-5 rounded-full border-2 border-white animate-spin border-t-transparent" />
 											<span>Signing in...</span>
 										</div>
 									) : showCaptcha && !captchaVerified ? (
 										"Complete CAPTCHA to Continue"
 									) : showCaptcha && captchaVerified ? (
-										<div className="flex items-center justify-center space-x-2">
+										<div className="flex justify-center items-center space-x-2">
 											<span>Sign In</span>
 											<ArrowRight className="w-4 h-4" />
 										</div>
 									) : (
-										<div className="flex items-center justify-center space-x-2">
+										<div className="flex justify-center items-center space-x-2">
 											<span>Sign In</span>
 											<ArrowRight className="w-4 h-4" />
 										</div>
@@ -315,7 +323,7 @@ export default function LoginPage() {
 							<div className="mt-6 text-center">
 								<a
 									href="#"
-									className="text-sm text-green-300 hover:text-green-200 transition-colors"
+									className="text-sm text-green-300 transition-colors hover:text-green-200"
 								>
 									Forgot your password?
 								</a>

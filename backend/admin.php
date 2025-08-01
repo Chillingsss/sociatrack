@@ -29,7 +29,7 @@ class User {
     }
 
     return json_encode(null);
-}
+} 
 }
 
 $operation = isset($_POST["operation"]) ? $_POST["operation"] : "0";

@@ -22,13 +22,53 @@ class User {
     include "connection.php";
 
     $sql = "SELECT a.post_id, a.post_caption, a.post_createdAt, b.user_firstname, b.user_lastname, b.user_avatar, 
-            GROUP_CONCAT(c.postImage_fileName) as image_files
+            GROUP_CONCAT(c.postImage_fileName) as image_files,
+            COUNT(DISTINCT r.react_id) as total_reactions,
+            SUM(CASE WHEN r.react_type = 'like' THEN 1 ELSE 0 END) as like_count,
+            SUM(CASE WHEN r.react_type = 'love' THEN 1 ELSE 0 END) as love_count,
+            SUM(CASE WHEN r.react_type = 'haha' THEN 1 ELSE 0 END) as haha_count,
+            SUM(CASE WHEN r.react_type = 'sad' THEN 1 ELSE 0 END) as sad_count,
+            SUM(CASE WHEN r.react_type = 'angry' THEN 1 ELSE 0 END) as angry_count,
+            SUM(CASE WHEN r.react_type = 'wow' THEN 1 ELSE 0 END) as wow_count
             FROM tblpost a 
             LEFT JOIN tbluser b ON a.post_userId = b.user_id 
             LEFT JOIN tblpost_images c ON a.post_id = c.postImage_postId 
+            LEFT JOIN tblreact r ON a.post_id = r.react_postId
             GROUP BY a.post_id 
             ORDER BY a.post_createdAt DESC";
     $stmt = $conn->prepare($sql);
+    $stmt->execute();
+
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return json_encode($result);
+  }
+
+  function getPostsWithUserReactions($json)
+  {
+    include "connection.php";
+
+    $json = json_decode($json, true);
+    $userId = $json['user_id'];
+
+    $sql = "SELECT a.post_id, a.post_caption, a.post_createdAt, b.user_firstname, b.user_lastname, b.user_avatar, 
+            GROUP_CONCAT(c.postImage_fileName) as image_files,
+            COUNT(DISTINCT r.react_id) as total_reactions,
+            SUM(CASE WHEN r.react_type = 'like' THEN 1 ELSE 0 END) as like_count,
+            SUM(CASE WHEN r.react_type = 'love' THEN 1 ELSE 0 END) as love_count,
+            SUM(CASE WHEN r.react_type = 'haha' THEN 1 ELSE 0 END) as haha_count,
+            SUM(CASE WHEN r.react_type = 'sad' THEN 1 ELSE 0 END) as sad_count,
+            SUM(CASE WHEN r.react_type = 'angry' THEN 1 ELSE 0 END) as angry_count,
+            SUM(CASE WHEN r.react_type = 'wow' THEN 1 ELSE 0 END) as wow_count,
+            ur.react_type as user_reaction
+            FROM tblpost a 
+            LEFT JOIN tbluser b ON a.post_userId = b.user_id 
+            LEFT JOIN tblpost_images c ON a.post_id = c.postImage_postId 
+            LEFT JOIN tblreact r ON a.post_id = r.react_postId
+            LEFT JOIN tblreact ur ON a.post_id = ur.react_postId AND ur.react_userId = :userId
+            GROUP BY a.post_id 
+            ORDER BY a.post_createdAt DESC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':userId', $userId);
     $stmt->execute();
 
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -71,6 +111,114 @@ class User {
       return json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
   }
+
+  function getReactPost($json = null)
+  {
+    include "connection.php";
+
+    $sql = "SELECT a.react_id, a.react_type, a.react_createdAt, a.react_postId, b.user_firstname, b.user_lastname, b.user_avatar
+            FROM tblreact a
+            INNER JOIN tbluser b ON a.react_userId = b.user_id
+            INNER JOIN tblpost c ON a.react_postId = c.post_id
+            ORDER BY a.react_createdAt DESC";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return json_encode($result);
+  }
+
+  function addReaction($json)
+  {
+    include "connection.php";
+
+    $json = json_decode($json, true);
+    
+    // Debug logging
+    error_log("addReaction called with: " . json_encode($json));
+    
+    try {
+      // Check if user already reacted to this post
+      $checkSql = "SELECT react_id, react_type FROM tblreact WHERE react_userId = :userId AND react_postId = :postId";
+      $checkStmt = $conn->prepare($checkSql);
+      $checkStmt->bindParam(':userId', $json['userId']);
+      $checkStmt->bindParam(':postId', $json['postId']);
+      $checkStmt->execute();
+      $existingReaction = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+      error_log("Existing reaction: " . json_encode($existingReaction));
+
+      if ($existingReaction) {
+        // Update existing reaction
+        if ($existingReaction['react_type'] === $json['reactionType']) {
+          // Remove reaction if same type clicked
+          $deleteSql = "DELETE FROM tblreact WHERE react_id = :reactId";
+          $deleteStmt = $conn->prepare($deleteSql);
+          $deleteStmt->bindParam(':reactId', $existingReaction['react_id']);
+          $deleteStmt->execute();
+          error_log("Reaction removed");
+          return json_encode(['success' => true, 'action' => 'removed']);
+        } else {
+          // Update reaction type
+          $updateSql = "UPDATE tblreact SET react_type = :reactionType WHERE react_id = :reactId";
+          $updateStmt = $conn->prepare($updateSql);
+          $updateStmt->bindParam(':reactionType', $json['reactionType']);
+          $updateStmt->bindParam(':reactId', $existingReaction['react_id']);
+          $updateStmt->execute();
+          error_log("Reaction updated");
+          return json_encode(['success' => true, 'action' => 'updated']);
+        }
+      } else {
+        // Add new reaction
+        $insertSql = "INSERT INTO tblreact (react_userId, react_postId, react_type, react_createdAt) VALUES (:userId, :postId, :reactionType, NOW())";
+        $insertStmt = $conn->prepare($insertSql);
+        $insertStmt->bindParam(':userId', $json['userId']);
+        $insertStmt->bindParam(':postId', $json['postId']);
+        $insertStmt->bindParam(':reactionType', $json['reactionType']);
+        $insertStmt->execute();
+        error_log("New reaction added");
+        return json_encode(['success' => true, 'action' => 'added']);
+      }
+    } catch (Exception $e) {
+      error_log("Error in addReaction: " . $e->getMessage());
+      return json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+  }
+
+  function getReactionDetails($json)
+  {
+    include "connection.php";
+
+    $json = json_decode($json, true);
+    $postId = $json['postId'];
+
+    $sql = "SELECT r.react_type, u.user_firstname, u.user_lastname, u.user_avatar
+            FROM tblreact r
+            INNER JOIN tbluser u ON r.react_userId = u.user_id
+            WHERE r.react_postId = :postId
+            ORDER BY r.react_createdAt DESC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':postId', $postId);
+    $stmt->execute();
+
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Group by reaction type
+    $groupedReactions = [];
+    foreach ($result as $reaction) {
+      $type = $reaction['react_type'];
+      if (!isset($groupedReactions[$type])) {
+        $groupedReactions[$type] = [];
+      }
+      $groupedReactions[$type][] = [
+        'firstname' => $reaction['user_firstname'],
+        'lastname' => $reaction['user_lastname'],
+        'avatar' => $reaction['user_avatar']
+      ];
+    }
+
+    return json_encode($groupedReactions);
+  }
 }
 
 $operation = isset($_POST["operation"]) ? $_POST["operation"] : "0";
@@ -88,8 +236,20 @@ switch ($operation) {
   case "getPosts":
     echo $user->getPosts();
     break;
+  case "getPostsWithUserReactions":
+    echo $user->getPostsWithUserReactions($json);
+    break;
   case "createPost":
     echo $user->createPost($json);
+    break;
+  case "getReactPost":
+    echo $user->getReactPost($json);
+    break;
+  case "addReaction":
+    echo $user->addReaction($json);
+    break;
+  case "getReactionDetails":
+    echo $user->getReactionDetails($json);
     break;
   default:
     echo json_encode("WALA KA NAGBUTANG OG OPERATION SA UBOS HAHAHHA BOBO");

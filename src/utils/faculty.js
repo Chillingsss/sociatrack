@@ -27,6 +27,35 @@ export async function getPosts() {
 	return response.data && Array.isArray(response.data) ? response.data : [];
 }
 
+export async function getPostsWithUserReactions(userId) {
+	const apiUrl = getDecryptedApiUrl();
+
+	const formData = new FormData();
+	formData.append("operation", "getPostsWithUserReactions");
+	formData.append("json", JSON.stringify({ user_id: userId }));
+
+	const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+	return response.data && Array.isArray(response.data) ? response.data : [];
+}
+
+export async function addReaction(userId, postId, reactionType) {
+	const apiUrl = getDecryptedApiUrl();
+
+	const formData = new FormData();
+	formData.append("operation", "addReaction");
+	formData.append(
+		"json",
+		JSON.stringify({
+			userId: userId,
+			postId: postId,
+			reactionType: reactionType,
+		})
+	);
+
+	const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+	return response.data;
+}
+
 export async function createPost(userId, caption, imageFiles) {
 	const apiUrl = getDecryptedApiUrl();
 

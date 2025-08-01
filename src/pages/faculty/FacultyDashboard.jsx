@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getProfile, getPosts, createPost } from "../../utils/faculty";
+import {
+	getProfile,
+	getPostsWithUserReactions,
+	createPost,
+	getPosts,
+} from "../../utils/faculty";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import CryptoJS from "crypto-js";
 import { getDecryptedApiUrl } from "../../utils/apiConfig";
 import Feed from "../../components/Feed";
+import AvatarDropdown from "../../components/AvatarDropdown";
 
 export default function FacultyDashboard() {
 	const [caption, setCaption] = useState("");
@@ -12,10 +18,8 @@ export default function FacultyDashboard() {
 	const [imagePreviews, setImagePreviews] = useState([]);
 	const [posts, setPosts] = useState([]);
 	const [profile, setProfile] = useState(null);
-	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [isPosting, setIsPosting] = useState(false);
-	const dropdownRef = useRef(null);
 	const mobileMenuRef = useRef(null);
 	const navigate = useNavigate();
 
@@ -49,24 +53,38 @@ export default function FacultyDashboard() {
 		}
 	}, [userId]);
 
-	// Fetch posts from database
+	// Fetch posts from database with user reactions
+	const fetchPosts = () => {
+		if (userId) {
+			getPostsWithUserReactions(userId)
+				.then((postsData) => {
+					console.log("Posts data received:", postsData);
+					setPosts(postsData);
+				})
+				.catch((error) => {
+					console.error("Error fetching posts:", error);
+					setPosts([]);
+				});
+		} else {
+			// Fallback to regular getPosts if no userId
+			getPosts()
+				.then((postsData) => {
+					console.log("Posts data received:", postsData);
+					setPosts(postsData);
+				})
+				.catch((error) => {
+					console.error("Error fetching posts:", error);
+					setPosts([]);
+				});
+		}
+	};
+
 	useEffect(() => {
-		getPosts()
-			.then((postsData) => {
-				console.log("Posts data received:", postsData);
-				setPosts(postsData);
-			})
-			.catch((error) => {
-				console.error("Error fetching posts:", error);
-				setPosts([]);
-			});
-	}, []);
+		fetchPosts();
+	}, [userId]);
 
 	useEffect(() => {
 		function handleClickOutside(event) {
-			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-				setDropdownOpen(false);
-			}
 			if (
 				mobileMenuRef.current &&
 				!mobileMenuRef.current.contains(event.target)
@@ -74,12 +92,12 @@ export default function FacultyDashboard() {
 				setMobileMenuOpen(false);
 			}
 		}
-		if (dropdownOpen || mobileMenuOpen) {
+		if (mobileMenuOpen) {
 			document.addEventListener("mousedown", handleClickOutside);
 			return () =>
 				document.removeEventListener("mousedown", handleClickOutside);
 		}
-	}, [dropdownOpen, mobileMenuOpen]);
+	}, [mobileMenuOpen]);
 
 	const handleImageChange = (e) => {
 		if (e.target.files && e.target.files.length > 0) {
@@ -107,13 +125,7 @@ export default function FacultyDashboard() {
 			.then((result) => {
 				console.log("New post created:", result);
 				// Refresh posts after creating new post
-				getPosts()
-					.then((postsData) => {
-						setPosts(postsData);
-					})
-					.catch((error) => {
-						console.error("Error fetching posts:", error);
-					});
+				fetchPosts();
 				setCaption("");
 				setSelectedImages([]);
 				setImagePreviews([]);
@@ -145,65 +157,54 @@ export default function FacultyDashboard() {
 	return (
 		<div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
 			{/* Top Bar with Avatar and Mobile Menu */}
-			<div className="flex justify-between items-center px-4 py-4 w-full md:px-8">
-				{/* Mobile Menu Button */}
-				<button
-					onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-					className="flex items-center p-2 bg-gray-100 rounded-lg shadow md:hidden dark:bg-gray-700"
-				>
-					<svg
-						className="w-6 h-6 text-gray-600 dark:text-gray-300"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M4 6h16M4 12h16M4 18h16"
-						/>
-					</svg>
-				</button>
-
-				{/* Desktop Title - Hidden on mobile */}
-				<h1 className="hidden text-xl font-bold text-gray-800 md:block dark:text-gray-200">
-					Faculty Dashboard
-				</h1>
-
-				{/* Avatar - Always on the right */}
-				<div className="relative" ref={dropdownRef}>
+			<div className="flex sticky top-0 z-40 justify-between items-center px-4 py-4 w-full bg-gray-100 border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700 md:px-8">
+				{/* Left side - Menu button and Logo on mobile */}
+				<div className="flex gap-4 items-center md:hidden">
+					{/* Mobile Menu Button */}
 					<button
-						onClick={() => setDropdownOpen((v) => !v)}
-						className="flex items-center focus:outline-none"
+						onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+						className="flex items-center p-2 bg-gray-100 rounded-lg shadow dark:bg-gray-700"
 					>
-						<img
-							src={
-								profile?.avatar ||
-								`https://ui-avatars.com/api/?name=${encodeURIComponent(
-									profile?.user_firstname + " " + profile?.user_lastname ||
-										"Faculty"
-								)}`
-							}
-							alt="Avatar"
-							className="w-10 h-10 rounded-full border-2 border-green-600 shadow"
-						/>
+						<svg
+							className="w-6 h-6 text-gray-600 dark:text-gray-300"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M4 6h16M4 12h16M4 18h16"
+							/>
+						</svg>
 					</button>
-					{dropdownOpen && (
-						<div className="absolute right-0 z-50 mt-2 w-40 bg-white rounded-lg shadow-lg dark:bg-gray-800">
-							<div className="px-4 py-2 font-semibold text-gray-800 border-b dark:text-gray-100 dark:border-gray-700">
-								{profile?.user_firstname + " " + profile?.user_lastname ||
-									"Faculty"}
-							</div>
-							<button
-								onClick={handleLogout}
-								className="px-4 py-2 w-full text-left text-red-600 rounded-b-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-							>
-								Logout
-							</button>
-						</div>
-					)}
+
+					{/* Logo - Mobile */}
+					<div className="flex items-center">
+						<img
+							src="/images/cocLogo.png"
+							alt="CITE Logo"
+							className="w-auto h-10"
+						/>
+					</div>
 				</div>
+
+				{/* Logo - Desktop */}
+				<div className="hidden items-center md:flex">
+					<img
+						src="/images/cocLogo.png"
+						alt="CITE Logo"
+						className="w-auto h-16"
+					/>
+				</div>
+
+				{/* Avatar Dropdown */}
+				<AvatarDropdown
+					profile={profile}
+					onLogout={handleLogout}
+					userRole="Faculty"
+				/>
 			</div>
 
 			{/* Mobile Menu Overlay */}
@@ -332,7 +333,7 @@ export default function FacultyDashboard() {
 					</div>
 
 					{/* Feed */}
-					<Feed posts={posts} />
+					<Feed posts={posts} userId={userId} onReactionUpdate={fetchPosts} />
 				</main>
 
 				{/* Right Sidebar */}

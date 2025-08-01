@@ -15,7 +15,7 @@ function App() {
 	return (
 		<Routes>
 			<Route path="/sociatrack" element={<LoginPage />} />
-			{/* <Route
+			<Route
 				path="/AdminDashboard"
 				element={
 					<PrivateRoute allowedRole="Admin">
@@ -30,7 +30,7 @@ function App() {
 						<StudentDashboard />
 					</PrivateRoute>
 				}
-			/> */}
+			/>
 			<Route
 				path="/FacultyDashboard"
 				element={

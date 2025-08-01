@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getDecryptedApiUrl } from "../utils/apiConfig";
 import { addReaction } from "../utils/faculty";
+import { getComments, formatTimeAgo } from "../utils/student";
 import axios from "axios";
 import ReactionDetailsModal from "./ReactionDetailsModal";
 import ImageModal from "./ImageModal";
@@ -18,6 +19,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 	const [modalPostId, setModalPostId] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [showMobileReactions, setShowMobileReactions] = useState(null);
+	const [postComments, setPostComments] = useState({});
 	const hoverTimeoutRef = useRef(null);
 	const reactionPopupRef = useRef(null);
 	const reactionDetailsRef = useRef(null);
@@ -625,6 +627,114 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 		);
 	};
 
+	// Fetch comments for a specific post
+	const fetchPostComments = async (postId, force = false) => {
+		if (postComments[postId] && !force) return; // Already fetched and not forcing refresh
+
+		try {
+			const result = await getComments(postId);
+			if (result.success) {
+				setPostComments((prev) => ({
+					...prev,
+					[postId]: result.comments,
+				}));
+			}
+		} catch (error) {
+			console.error("Error fetching post comments:", error);
+		}
+	};
+
+	// Fetch comments for all posts when component mounts
+	useEffect(() => {
+		if (posts && posts.length > 0) {
+			posts.forEach((post) => {
+				fetchPostComments(post.post_id);
+			});
+		}
+	}, [posts]);
+
+	const handleViewAllComments = (post) => {
+		setSelectedPost(post);
+
+		// If the post has images, show the first image
+		if (post.image_files) {
+			const images = post.image_files.split(",");
+			const imageUrls = images.map(
+				(img) => `${getDecryptedApiUrl()}/uploads/${img}`
+			);
+			setSelectedImage(imageUrls[0]);
+			setCurrentImageSet(imageUrls);
+			setCurrentImageIndex(0);
+		} else {
+			setSelectedImage(null);
+			setCurrentImageSet([]);
+			setCurrentImageIndex(0);
+		}
+
+		setZoomLevel(1);
+	};
+
+	const truncateMessage = (message, limit = 100) => {
+		if (message.length <= limit) return message;
+		return message.substring(0, limit) + "...";
+	};
+
+	const renderComments = (post) => {
+		const comments = postComments[post.post_id] || [];
+		if (comments.length === 0) return null;
+
+		// Always show only the first comment
+		const displayComments = comments.slice(0, 1);
+		const hasMoreComments = comments.length > 1;
+
+		return (
+			<div className="mt-3 space-y-2">
+				{displayComments.map((comment) => (
+					<div key={comment.comment_id} className="flex items-start space-x-2">
+						<img
+							src={
+								comment.user_avatar ||
+								`https://ui-avatars.com/api/?name=${encodeURIComponent(
+									comment.user_firstname + " " + comment.user_lastname
+								)}&size=32`
+							}
+							alt={comment.user_firstname + " " + comment.user_lastname}
+							className="w-8 h-8 rounded-full"
+						/>
+						<div className="flex-1 px-3 py-2 bg-gray-100 rounded-xl dark:bg-gray-700">
+							<div className="flex justify-between items-center">
+								<span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+									{comment.user_firstname + " " + comment.user_lastname}
+								</span>
+								<span className="text-xs text-gray-500 dark:text-gray-400">
+									{formatTimeAgo(comment.comment_createdAt)}
+								</span>
+							</div>
+							<p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+								{truncateMessage(comment.comment_message, 100)}
+							</p>
+						</div>
+					</div>
+				))}
+
+				{hasMoreComments && (
+					<button
+						onClick={() => handleViewAllComments(post)}
+						className="ml-10 text-sm font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+					>
+						View all {comments.length} comment{comments.length > 1 ? "s" : ""}{" "}
+						in modal
+					</button>
+				)}
+			</div>
+		);
+	};
+
+	const handleCommentAdded = (postId) => {
+		// Refresh comments for the specific post with force=true
+		fetchPostComments(postId, true);
+	};
+
 	return (
 		<>
 			<div className="flex flex-col gap-6">
@@ -649,7 +759,15 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 									{post.user_firstname + " " + post.user_lastname}
 								</span>
 								<div className="text-sm text-gray-500 dark:text-gray-400">
-									{new Date(post.post_createdAt).toLocaleDateString()}
+									{new Date(post.post_createdAt).toLocaleString("en-PH", {
+										timeZone: "Asia/Manila",
+										year: "numeric",
+										month: "long",
+										day: "numeric",
+										hour: "numeric",
+										minute: "2-digit",
+										hour12: true,
+									})}
 								</div>
 							</div>
 						</div>
@@ -886,7 +1004,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 							</div>
 
 							{/* Comment Button */}
-							<button className="flex items-center px-3 py-2 text-gray-500 rounded-lg transition-colors hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20">
+							<button
+								onClick={() => handleViewAllComments(post)}
+								className="flex items-center px-3 py-2 text-gray-500 rounded-lg transition-colors hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
+							>
 								<svg
 									className="mr-2 w-5 h-5"
 									fill="none"
@@ -900,7 +1021,12 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 										d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
 									/>
 								</svg>
-								<span className="text-sm font-medium">Comment</span>
+								<span className="text-sm font-medium">
+									Comment{" "}
+									{postComments[post.post_id] &&
+										postComments[post.post_id].length > 0 &&
+										`(${postComments[post.post_id].length})`}
+								</span>
 							</button>
 
 							{/* Share Button */}
@@ -921,6 +1047,9 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 								<span className="text-sm font-medium">Share</span>
 							</button>
 						</div>
+
+						{/* Comments Section */}
+						{renderComments(post)}
 					</div>
 				))}
 			</div>
@@ -938,6 +1067,8 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 				onZoomIn={zoomIn}
 				onZoomOut={zoomOut}
 				onResetZoom={resetZoom}
+				userId={userId}
+				onCommentAdded={handleCommentAdded}
 			/>
 
 			{/* Reaction Details Modal */}

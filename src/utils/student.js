@@ -115,3 +115,33 @@ export const formatTimeAgo = (dateString) => {
 	const diffInYears = Math.floor(diffInDays / 365);
 	return diffInYears === 1 ? "1 year ago" : `${diffInYears} years ago`;
 };
+
+export const getStudentAttendanceRecords = async (studentId) => {
+	try {
+		const apiUrl = getDecryptedApiUrl();
+		const formData = new FormData();
+		formData.append("operation", "getStudentAttendanceRecords");
+		formData.append("json", JSON.stringify({ studentId }));
+
+		const response = await axios.post(`${apiUrl}/student.php`, formData);
+		// console.log(response.data);
+
+		if (Array.isArray(response.data)) {
+			return {
+				success: true,
+				records: response.data,
+			};
+		}
+
+		return {
+			success: false,
+			records: [],
+		};
+	} catch (error) {
+		console.error("Error fetching student attendance records:", error);
+		return {
+			success: false,
+			records: [],
+		};
+	}
+};

@@ -3,7 +3,7 @@ import CryptoJS from "crypto-js";
 // Secret key for encryption - in production, this should be more secure
 const SECRET_KEY = "sociatrac_api_secret_key";
 const SESSION_KEY = "sociatrac_encrypted_api_url";
-const FALLBACK_API_URL = "http://10.92.52.215/sociatrack/backend";
+const FALLBACK_API_URL = "http://localhost/sociatrack/backend";
 
 /**
  * Set the encrypted API URL in session storage

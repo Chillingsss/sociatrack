@@ -18,20 +18,19 @@ import {
 	Search,
 	ChevronLeft,
 	ChevronRight,
+	Users,
 } from "lucide-react";
 import {
+	getAllTribes,
 	getStudentsInTribe,
 	getAttendanceSessions,
 	getTodayAttendance,
 	processAttendance,
-} from "../utils/faculty";
+} from "../utils/sbo";
 
-const FacultyAttendanceModal = ({
-	isOpen,
-	onClose,
-	facultyId,
-	facultyProfile,
-}) => {
+const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
+	const [tribes, setTribes] = useState([]);
+	const [selectedTribe, setSelectedTribe] = useState(null);
 	const [students, setStudents] = useState([]);
 	const [sessions, setSessions] = useState([]);
 	const [selectedSession, setSelectedSession] = useState(null);
@@ -43,36 +42,32 @@ const FacultyAttendanceModal = ({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedDate, setSelectedDate] = useState(
 		new Date().toISOString().split("T")[0]
-	); // Today's date in YYYY-MM-DD format
-	const [showCalendar, setShowCalendar] = useState(false);
-	const [calendarDate, setCalendarDate] = useState(new Date());
+	);
 	const videoRef = useRef(null);
 	const codeReader = useRef(null);
 	const scrollContainerRef = useRef(null);
 
 	useEffect(() => {
-		if (isOpen && facultyId) {
-			fetchStudentsInTribe();
+		if (isOpen && sboId) {
+			fetchTribes();
 			fetchAttendanceSessions();
 			fetchTodayAttendance();
 		}
-	}, [isOpen, facultyId]);
+	}, [isOpen, sboId]);
 
 	useEffect(() => {
 		return () => {
-			// Cleanup camera when component unmounts
 			if (codeReader.current) {
 				codeReader.current.reset();
 			}
 		};
 	}, []);
 
-	// Handle scroll events to show/hide scroll-to-top button
 	useEffect(() => {
 		const handleScroll = () => {
 			if (scrollContainerRef.current) {
 				const scrollTop = scrollContainerRef.current.scrollTop;
-				setShowScrollTop(scrollTop > 200); // Show button after scrolling 200px
+				setShowScrollTop(scrollTop > 200);
 			}
 		};
 
@@ -83,7 +78,6 @@ const FacultyAttendanceModal = ({
 		}
 	}, [isOpen]);
 
-	// Function to scroll to top
 	const scrollToTop = () => {
 		if (scrollContainerRef.current) {
 			scrollContainerRef.current.scrollTo({
@@ -93,9 +87,24 @@ const FacultyAttendanceModal = ({
 		}
 	};
 
-	const fetchStudentsInTribe = async () => {
+	const fetchTribes = async () => {
 		try {
-			const result = await getStudentsInTribe(facultyId);
+			const result = await getAllTribes();
+			if (result.success) {
+				setTribes(result.tribes);
+			} else {
+				console.warn("Failed to fetch tribes:", result);
+				setTribes([]);
+			}
+		} catch (error) {
+			console.error("Error fetching tribes:", error);
+			setTribes([]);
+		}
+	};
+
+	const fetchStudentsInTribe = async (tribeId) => {
+		try {
+			const result = await getStudentsInTribe(tribeId);
 			if (result.success) {
 				setStudents(result.students);
 			} else {
@@ -125,7 +134,7 @@ const FacultyAttendanceModal = ({
 
 	const fetchTodayAttendance = async () => {
 		try {
-			const result = await getTodayAttendance(facultyId);
+			const result = await getTodayAttendance(sboId);
 			if (result.success) {
 				setAttendanceRecords(result.records);
 			} else {
@@ -135,6 +144,22 @@ const FacultyAttendanceModal = ({
 		} catch (error) {
 			console.error("Error fetching today's attendance:", error);
 			setAttendanceRecords([]);
+		}
+	};
+
+	const handleTribeSelect = (tribe) => {
+		setSelectedTribe(tribe);
+		setStudents([]);
+		fetchStudentsInTribe(tribe.tribe_id);
+
+		// Automatically select the first active session
+		const activeSession = sessions.find(
+			(session) => session.attendanceS_status === 1
+		);
+		if (activeSession) {
+			setSelectedSession(activeSession);
+		} else {
+			setSelectedSession(null);
 		}
 	};
 
@@ -152,33 +177,13 @@ const FacultyAttendanceModal = ({
 		setShowScanner(true);
 
 		try {
-			// Check if getUserMedia is supported
 			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
 				throw new Error("Camera access is not supported in this browser");
 			}
 
-			// First, check camera permissions
-			try {
-				const permissionStatus = await navigator.permissions.query({
-					name: "camera",
-				});
-				console.log("Camera permission status:", permissionStatus.state);
-
-				if (permissionStatus.state === "denied") {
-					throw new Error(
-						"Camera permission is denied. Please enable camera access in your browser settings."
-					);
-				}
-			} catch (permError) {
-				console.warn("Permission API not supported:", permError);
-				// Continue anyway, as some browsers don't support permissions API
-			}
-
 			codeReader.current = new BrowserMultiFormatReader();
 
-			// Try different camera constraints in order of preference
 			const constraintOptions = [
-				// First try: Back camera with ideal resolution
 				{
 					video: {
 						facingMode: { exact: "environment" },
@@ -186,7 +191,6 @@ const FacultyAttendanceModal = ({
 						height: { ideal: 480 },
 					},
 				},
-				// Second try: Any back camera
 				{
 					video: {
 						facingMode: "environment",
@@ -194,7 +198,6 @@ const FacultyAttendanceModal = ({
 						height: { ideal: 480 },
 					},
 				},
-				// Third try: Front camera
 				{
 					video: {
 						facingMode: "user",
@@ -202,14 +205,12 @@ const FacultyAttendanceModal = ({
 						height: { ideal: 480 },
 					},
 				},
-				// Fourth try: Any camera with basic constraints
 				{
 					video: {
 						width: { ideal: 640 },
 						height: { ideal: 480 },
 					},
 				},
-				// Last try: Just video
 				{
 					video: true,
 				},
@@ -218,39 +219,23 @@ const FacultyAttendanceModal = ({
 			let stream = null;
 			let lastError = null;
 
-			// Try each constraint option until one works
 			for (const constraints of constraintOptions) {
 				try {
-					console.log("Trying camera constraints:", constraints);
 					stream = await navigator.mediaDevices.getUserMedia(constraints);
-					console.log(
-						"Camera access successful with constraints:",
-						constraints
-					);
 					break;
 				} catch (error) {
-					console.warn(
-						"Failed with constraints:",
-						constraints,
-						"Error:",
-						error.message
-					);
 					lastError = error;
 					continue;
 				}
 			}
 
 			if (!stream) {
-				throw (
-					lastError ||
-					new Error("Unable to access camera with any configuration")
-				);
+				throw lastError || new Error("Unable to access camera");
 			}
 
 			if (videoRef.current) {
 				videoRef.current.srcObject = stream;
 
-				// Wait for video to be ready
 				await new Promise((resolve, reject) => {
 					const video = videoRef.current;
 					if (!video) {
@@ -276,7 +261,6 @@ const FacultyAttendanceModal = ({
 					video.play().catch(reject);
 				});
 
-				// Start QR code detection
 				codeReader.current.decodeFromVideoDevice(
 					null,
 					videoRef.current,
@@ -285,7 +269,6 @@ const FacultyAttendanceModal = ({
 							console.log("QR Code detected:", result.getText());
 							setScanResult(result.getText());
 							handleQRScanResult(result.getText());
-							// Don't stop scanner here - let it continue scanning
 						}
 						if (error && error.name !== "NotFoundException") {
 							console.warn("QR Scanner error:", error);
@@ -293,7 +276,6 @@ const FacultyAttendanceModal = ({
 					}
 				);
 
-				// Show success toast when camera starts
 				toast.success("Camera started! Scan QR codes continuously.", {
 					duration: 3000,
 				});
@@ -302,7 +284,6 @@ const FacultyAttendanceModal = ({
 			console.error("Camera access error:", error);
 			setShowScanner(false);
 
-			// Provide specific error messages with toast
 			if (error.name === "NotAllowedError") {
 				toast.error(
 					"Camera permission denied. Please allow camera access and try again.",
@@ -342,47 +323,37 @@ const FacultyAttendanceModal = ({
 	};
 
 	const handleQRScanResult = async (qrText) => {
-		// Prevent processing if already processing another scan
 		if (loading) {
 			console.log("Already processing a scan, skipping...");
 			return;
 		}
 
-		// Extract student ID from QR code text
-		// Expected format: "student_id: STUDENT_ID" or just "STUDENT_ID"
 		let studentId = qrText;
 		if (qrText.includes("student_id:")) {
 			studentId = qrText.split("student_id:")[1].trim();
 		}
 
-		// Verify student is in the same tribe
 		const student = students.find((s) => s.user_id === studentId);
 		if (!student) {
-			toast.error("Student not found in your tribe!", {
+			toast.error("Student not found in selected tribe!", {
 				duration: 3000,
 			});
 			return;
 		}
 
 		const studentName = `${student.user_firstname} ${student.user_lastname}`;
-
-		// Show loading toast for checking attendance
 		const checkingToast = toast.loading("Checking attendance status...");
 
 		try {
-			// Refresh attendance records to get the most up-to-date data
 			await fetchTodayAttendance();
-
-			// Wait a moment for state to update
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
-			// Get fresh attendance records
 			const response = await axios.post(
-				`${getDecryptedApiUrl()}/faculty.php`,
+				`${getDecryptedApiUrl()}/sbo.php`,
 				(() => {
 					const formData = new FormData();
 					formData.append("operation", "getTodayAttendance");
-					formData.append("json", JSON.stringify({ facultyId }));
+					formData.append("json", JSON.stringify({ sboId }));
 					return formData;
 				})()
 			);
@@ -391,7 +362,6 @@ const FacultyAttendanceModal = ({
 				? response.data
 				: [];
 
-			// Check current attendance status for this student with fresh data
 			const currentRecord = freshAttendanceRecords.find(
 				(r) =>
 					r.attendance_studentId === studentId &&
@@ -400,21 +370,12 @@ const FacultyAttendanceModal = ({
 
 			toast.dismiss(checkingToast);
 
-			// If student has a time-in record, check if 1 hour has passed
 			if (currentRecord && currentRecord.attendance_timeIn) {
 				const timeInDate = new Date(currentRecord.attendance_timeIn);
 				const now = new Date();
 				const timeDifference = now.getTime() - timeInDate.getTime();
-				const oneHourInMs = 60 * 60 * 1000; // 1 hour in milliseconds
+				const oneHourInMs = 60 * 60 * 1000;
 
-				console.log(`Student ${studentName} time check:`, {
-					timeIn: currentRecord.attendance_timeIn,
-					timeOut: currentRecord.attendance_timeOut,
-					timeDifference: Math.round(timeDifference / 1000 / 60), // minutes
-					oneHourPassed: timeDifference >= oneHourInMs,
-				});
-
-				// If student already has time out, they're done
 				if (currentRecord.attendance_timeOut) {
 					const timeInFormatted = formatTime(currentRecord.attendance_timeIn);
 					const timeOutFormatted = formatTime(currentRecord.attendance_timeOut);
@@ -430,11 +391,10 @@ const FacultyAttendanceModal = ({
 					return;
 				}
 
-				// If less than 1 hour has passed since time-in, block the scan
 				if (timeDifference < oneHourInMs) {
 					const remainingTime = Math.ceil(
 						(oneHourInMs - timeDifference) / (1000 * 60)
-					); // Convert to minutes
+					);
 					const timeInFormatted = formatTime(currentRecord.attendance_timeIn);
 					const dateFormatted = formatDate(currentRecord.attendance_timeIn);
 
@@ -447,14 +407,8 @@ const FacultyAttendanceModal = ({
 					);
 					return;
 				}
-
-				// If 1+ hour has passed, allow time out (continue to processAttendance)
-				console.log(
-					`1+ hour has passed since ${studentName} timed in. Allowing time out.`
-				);
 			}
 
-			// Show loading toast for processing attendance
 			const loadingToast = toast.loading("Processing attendance...");
 
 			try {
@@ -469,7 +423,6 @@ const FacultyAttendanceModal = ({
 			return;
 		}
 
-		// Continue scanning - don't stop the scanner
 		console.log("Continuing to scan for more QR codes...");
 	};
 
@@ -482,13 +435,13 @@ const FacultyAttendanceModal = ({
 			formData.append(
 				"json",
 				JSON.stringify({
-					facultyId,
+					sboId,
 					studentId,
 					sessionId: selectedSession.attendanceS_id,
 				})
 			);
 
-			const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+			const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 			const result = response.data;
 
 			if (result.success) {
@@ -509,7 +462,7 @@ const FacultyAttendanceModal = ({
 					});
 				}
 
-				fetchTodayAttendance(); // Refresh attendance records
+				fetchTodayAttendance();
 			} else {
 				toast.error(result.message || "Error processing attendance", {
 					duration: 3000,
@@ -525,66 +478,29 @@ const FacultyAttendanceModal = ({
 		}
 	};
 
-	// Function to sort students by newest attendance first for selected date
-	const sortStudentsByNewestAttendanceForDate = (students) => {
-		if (!selectedSession) {
-			return students;
+	const getStudentAttendanceStatus = (studentId) => {
+		if (!selectedSession) return "No Session";
+
+		if (!Array.isArray(attendanceRecords)) {
+			console.warn("attendanceRecords is not an array:", attendanceRecords);
+			return "Absent";
 		}
 
-		const filteredRecords = getFilteredAttendanceByDate();
+		const record = attendanceRecords.find(
+			(r) =>
+				r.attendance_studentId === studentId &&
+				parseInt(r.attendance_sessionId) ===
+					parseInt(selectedSession.attendanceS_id)
+		);
 
-		return [...students].sort((a, b) => {
-			// Get attendance records for both students in the selected session and date
-			const recordA = filteredRecords.find(
-				(r) =>
-					r.attendance_studentId === a.user_id &&
-					r.attendance_sessionId === selectedSession.attendanceS_id
-			);
-			const recordB = filteredRecords.find(
-				(r) =>
-					r.attendance_studentId === b.user_id &&
-					r.attendance_sessionId === selectedSession.attendanceS_id
-			);
-
-			// Get attendance status for both students
-			const statusA = getStudentAttendanceStatusForDate(a.user_id);
-			const statusB = getStudentAttendanceStatusForDate(b.user_id);
-
-			// Priority order: Completed > Time In > No record
-			const priorityOrder = {
-				Completed: 3,
-				"Time In": 2,
-				"No record": 1,
-				Absent: 0,
-			};
-
-			// First, sort by attendance status priority
-			const priorityA = priorityOrder[statusA] || 0;
-			const priorityB = priorityOrder[statusB] || 0;
-
-			if (priorityA !== priorityB) {
-				return priorityB - priorityA; // Higher priority first
-			}
-
-			// If both have the same status, sort by newest time_in
-			if (recordA && recordB) {
-				const timeA = new Date(recordA.attendance_timeIn).getTime();
-				const timeB = new Date(recordB.attendance_timeIn).getTime();
-				return timeB - timeA; // Newest first
-			}
-
-			// If only one has a record, prioritize the one with attendance
-			if (recordA && !recordB) return -1;
-			if (!recordA && recordB) return 1;
-
-			// If neither has records, maintain original order (alphabetical by name)
-			const nameA = `${a.user_firstname} ${a.user_lastname}`.toLowerCase();
-			const nameB = `${b.user_firstname} ${b.user_lastname}`.toLowerCase();
-			return nameA.localeCompare(nameB);
-		});
+		if (!record) return "No record";
+		if (record.attendance_timeIn && !record.attendance_timeOut)
+			return "Time In";
+		if (record.attendance_timeIn && record.attendance_timeOut)
+			return "Completed";
+		return "Absent";
 	};
 
-	// Function to filter students by search query (name or ID)
 	const filterStudents = (students) => {
 		if (!searchQuery.trim()) {
 			return students;
@@ -598,119 +514,6 @@ const FacultyAttendanceModal = ({
 
 			return fullName.includes(query) || studentId.includes(query);
 		});
-	};
-
-	// Function to filter attendance records by selected date
-	const getFilteredAttendanceByDate = () => {
-		if (!Array.isArray(attendanceRecords)) {
-			return [];
-		}
-
-		return attendanceRecords.filter((record) => {
-			if (!record.attendance_timeIn) return false;
-
-			// Extract date from attendance_timeIn (format: YYYY-MM-DD HH:MM:SS)
-			const recordDate = record.attendance_timeIn.split(" ")[0]; // Get YYYY-MM-DD part
-			return recordDate === selectedDate;
-		});
-	};
-
-	// Function to get student attendance status for selected date
-	const getStudentAttendanceStatusForDate = (studentId) => {
-		if (!selectedSession) return "No Session";
-
-		const filteredRecords = getFilteredAttendanceByDate();
-		const record = filteredRecords.find(
-			(r) =>
-				r.attendance_studentId === studentId &&
-				r.attendance_sessionId === selectedSession.attendanceS_id
-		);
-
-		if (!record) return "No record";
-		if (record.attendance_timeIn && !record.attendance_timeOut)
-			return "Time In";
-		if (record.attendance_timeIn && record.attendance_timeOut)
-			return "Completed";
-		return "Absent";
-	};
-
-	// Combined function to filter and sort students
-	const getFilteredAndSortedStudents = () => {
-		const filtered = filterStudents(students);
-		return sortStudentsByNewestAttendanceForDate(filtered);
-	};
-
-	// Calendar helper functions
-	const formatDateForDisplay = (date) => {
-		return new Date(date).toLocaleDateString("en-US", {
-			month: "long",
-			day: "numeric",
-			year: "numeric",
-		});
-	};
-
-	const formatDateForInput = (date) => {
-		return date.toISOString().split("T")[0];
-	};
-
-	const getDaysInMonth = (date) => {
-		const year = date.getFullYear();
-		const month = date.getMonth();
-		const firstDay = new Date(year, month, 1);
-		const lastDay = new Date(year, month + 1, 0);
-		const daysInMonth = lastDay.getDate();
-		const startingDayOfWeek = firstDay.getDay();
-
-		const days = [];
-
-		// Add empty cells for days before the first day of the month
-		for (let i = 0; i < startingDayOfWeek; i++) {
-			days.push(null);
-		}
-
-		// Add all days of the month
-		for (let day = 1; day <= daysInMonth; day++) {
-			days.push(new Date(year, month, day));
-		}
-
-		return days;
-	};
-
-	const isDateDisabled = (date) => {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		return date > today;
-	};
-
-	const isDateSelected = (date) => {
-		return formatDateForInput(date) === selectedDate;
-	};
-
-	const isToday = (date) => {
-		const today = new Date();
-		return date.toDateString() === today.toDateString();
-	};
-
-	const handleDateSelect = (date) => {
-		if (!isDateDisabled(date)) {
-			setSelectedDate(formatDateForInput(date));
-			setShowCalendar(false);
-		}
-	};
-
-	const navigateMonth = (direction) => {
-		setCalendarDate((prev) => {
-			const newDate = new Date(prev);
-			newDate.setMonth(prev.getMonth() + direction);
-			return newDate;
-		});
-	};
-
-	const goToToday = () => {
-		const today = new Date();
-		setSelectedDate(formatDateForInput(today));
-		setCalendarDate(today);
-		setShowCalendar(false);
 	};
 
 	const formatTime = (datetime) => {
@@ -741,7 +544,7 @@ const FacultyAttendanceModal = ({
 					{/* Header */}
 					<div className="flex flex-shrink-0 justify-between items-center p-4 border-b sm:p-6 dark:border-gray-700">
 						<h2 className="text-lg font-bold text-gray-800 sm:text-xl dark:text-gray-200">
-							Faculty Attendance System
+							SBO Attendance System
 						</h2>
 						<button
 							onClick={onClose}
@@ -753,30 +556,56 @@ const FacultyAttendanceModal = ({
 
 					{/* Scrollable Content Area */}
 					<div className="overflow-y-auto flex-1" ref={scrollContainerRef}>
-						{/* Session Selection */}
+						{/* Tribe Selection */}
 						<div className="p-4 border-b sm:p-6 dark:border-gray-700">
 							<h3 className="mb-3 text-base font-semibold text-gray-700 sm:mb-4 sm:text-lg dark:text-gray-300">
-								Select Session
+								Select Tribe
 							</h3>
 							<div className="flex flex-col flex-wrap gap-2 sm:flex-row sm:gap-4">
-								{sessions.map((session) => (
+								{tribes.map((tribe) => (
 									<button
-										key={session.attendanceS_id}
-										onClick={() => setSelectedSession(session)}
+										key={tribe.tribe_id}
+										onClick={() => handleTribeSelect(tribe)}
 										className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg transition-colors duration-200 text-sm sm:text-base font-medium ${
-											selectedSession?.attendanceS_id === session.attendanceS_id
+											selectedTribe?.tribe_id === tribe.tribe_id
 												? "bg-blue-600 text-white"
-												: session.attendanceS_status === 1
-												? "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-												: "bg-red-200 text-red-700 hover:bg-red-300 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+												: "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
 										}`}
 									>
-										{session.attendanceS_name}
-										{session.attendanceS_status === 0 && " (Inactive)"}
+										<Users className="inline mr-2 w-4 h-4" />
+										{tribe.tribe_name}
 									</button>
 								))}
 							</div>
 						</div>
+
+						{/* Session Selection - Only show when tribe is selected */}
+						{selectedTribe && (
+							<div className="p-4 border-b sm:p-6 dark:border-gray-700">
+								<h3 className="mb-3 text-base font-semibold text-gray-700 sm:mb-4 sm:text-lg dark:text-gray-300">
+									Select Session
+								</h3>
+								<div className="flex flex-col flex-wrap gap-2 sm:flex-row sm:gap-4">
+									{sessions.map((session) => (
+										<button
+											key={session.attendanceS_id}
+											onClick={() => setSelectedSession(session)}
+											className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg transition-colors duration-200 text-sm sm:text-base font-medium ${
+												selectedSession?.attendanceS_id ===
+												session.attendanceS_id
+													? "bg-blue-600 text-white"
+													: session.attendanceS_status === 1
+													? "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+													: "bg-red-200 text-red-700 hover:bg-red-300 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+											}`}
+										>
+											{session.attendanceS_name}
+											{session.attendanceS_status === 0 && " (Inactive)"}
+										</button>
+									))}
+								</div>
+							</div>
+						)}
 
 						{/* QR Scanner Section - Only show for active sessions */}
 						{selectedSession && selectedSession.attendanceS_status === 1 && (
@@ -842,40 +671,11 @@ const FacultyAttendanceModal = ({
 							</div>
 						)}
 
-						{/* Students List - Always show when session is selected */}
-						{selectedSession && (
+						{/* Students List - Always show when tribe and session are selected */}
+						{selectedTribe && selectedSession && (
 							<div className="p-3 sm:p-4 md:p-6">
-								{/* Date and Search Filters */}
-								<div className="mb-4 space-y-3">
-									{/* Date Picker */}
-									<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-										<label className="flex gap-2 items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-											<Calendar className="w-4 h-4" />
-											Select Date:
-										</label>
-										<input
-											type="date"
-											value={selectedDate}
-											onChange={(e) => setSelectedDate(e.target.value)}
-											max={new Date().toISOString().split("T")[0]} // Prevent future dates
-											className="px-3 py-2 text-sm bg-white rounded-lg border border-gray-300 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-blue-400"
-										/>
-										{selectedDate !==
-											new Date().toISOString().split("T")[0] && (
-											<button
-												onClick={() =>
-													setSelectedDate(
-														new Date().toISOString().split("T")[0]
-													)
-												}
-												className="text-sm text-blue-600 whitespace-nowrap hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-											>
-												Back to Today
-											</button>
-										)}
-									</div>
-
-									{/* Search Input */}
+								{/* Search Input */}
+								<div className="mb-4">
 									<div className="relative">
 										<div className="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
 											<Search className="w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -898,14 +698,19 @@ const FacultyAttendanceModal = ({
 									</div>
 								</div>
 
-								{/* Header with Session Info */}
+								{/* Header with Tribe and Session Info */}
 								<div className="flex flex-col gap-2 mb-4 sm:flex-row sm:justify-between sm:items-center sm:gap-4">
 									<h3 className="text-base font-semibold text-gray-700 sm:text-lg dark:text-gray-300">
-										Students in Your Tribe (
-										{getFilteredAndSortedStudents().length}/{students.length})
+										Students in {selectedTribe.tribe_name} (
+										{filterStudents(students).length}/{students.length})
 									</h3>
 									<div className="text-xs text-gray-500 sm:text-sm dark:text-gray-400">
 										<div className="flex flex-wrap gap-2 items-center">
+											<span>Tribe:</span>
+											<span className="font-medium text-gray-700 dark:text-gray-300">
+												{selectedTribe.tribe_name}
+											</span>
+											<span className="text-gray-400">•</span>
 											<span>Session:</span>
 											<span className="font-medium text-gray-700 dark:text-gray-300">
 												{selectedSession.attendanceS_name}
@@ -921,23 +726,15 @@ const FacultyAttendanceModal = ({
 													? "Active"
 													: "Inactive"}
 											</span>
-											<span className="text-gray-400">•</span>
-											<span className="font-medium text-gray-700 dark:text-gray-300">
-												{new Date(selectedDate).toLocaleDateString("en-US", {
-													month: "short",
-													day: "numeric",
-													year: "numeric",
-												})}
-											</span>
 										</div>
 									</div>
 								</div>
 
 								{students.length === 0 ? (
 									<p className="py-8 text-sm text-center text-gray-500 sm:text-base dark:text-gray-400">
-										No students found in your tribe.
+										No students found in {selectedTribe.tribe_name}.
 									</p>
-								) : getFilteredAndSortedStudents().length === 0 ? (
+								) : filterStudents(students).length === 0 ? (
 									<div className="py-8 text-center">
 										<Search className="mx-auto mb-4 w-12 h-12 text-gray-300 dark:text-gray-600" />
 										<p className="mb-2 text-sm text-gray-500 sm:text-base dark:text-gray-400">
@@ -952,18 +749,15 @@ const FacultyAttendanceModal = ({
 									</div>
 								) : (
 									<div className="space-y-3">
-										{getFilteredAndSortedStudents().map((student) => {
-											const status = getStudentAttendanceStatusForDate(
+										{filterStudents(students).map((student) => {
+											const status = getStudentAttendanceStatus(
 												student.user_id
 											);
-
-											// Get attendance record for selected date and session
-											const filteredRecords = getFilteredAttendanceByDate();
-											const record = filteredRecords.find(
+											const record = attendanceRecords.find(
 												(r) =>
 													r.attendance_studentId === student.user_id &&
-													r.attendance_sessionId ===
-														selectedSession?.attendanceS_id
+													parseInt(r.attendance_sessionId) ===
+														parseInt(selectedSession.attendanceS_id)
 											);
 
 											return (
@@ -1073,19 +867,18 @@ const FacultyAttendanceModal = ({
 							</div>
 						)}
 
-						{/* No Session Selected */}
-						{!selectedSession && (
+						{/* No Tribe Selected */}
+						{!selectedTribe && (
 							<div className="p-4 sm:p-6">
 								<div className="py-6 text-center sm:py-8">
 									<div className="flex justify-center items-center mx-auto mb-4 w-12 h-12 bg-gray-100 rounded-full sm:w-16 sm:h-16 dark:bg-gray-700">
-										<Clock className="w-6 h-6 text-gray-400 sm:w-8 sm:h-8 dark:text-gray-500" />
+										<Users className="w-6 h-6 text-gray-400 sm:w-8 sm:h-8 dark:text-gray-500" />
 									</div>
 									<h3 className="mb-2 text-base font-medium text-gray-900 sm:text-lg dark:text-gray-100">
-										Select a Session
+										Select a Tribe
 									</h3>
 									<p className="px-4 text-sm text-gray-500 sm:text-base dark:text-gray-400">
-										Choose a session above to view attendance records and manage
-										student check-ins.
+										Choose a tribe above to view students and manage attendance.
 									</p>
 								</div>
 							</div>
@@ -1108,4 +901,4 @@ const FacultyAttendanceModal = ({
 	);
 };
 
-export default FacultyAttendanceModal;
+export default SboAttendanceModal;

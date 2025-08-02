@@ -53,6 +53,12 @@
 	* {
 		@apply border-border;
 	}
+
+	html {
+		/* Smooth theme transitions */
+		transition: color-scheme 0.3s ease;
+	}
+
 	body {
 		@apply bg-background text-foreground;
 		margin: 0;
@@ -61,9 +67,37 @@
 			"Helvetica Neue", sans-serif;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
+		/* Smooth transitions for theme switching */
+		transition: background-color 0.3s ease, color 0.3s ease;
 	}
+
 	code {
 		font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
 			monospace;
+	}
+}
+
+/* Custom scrollbar for dark mode */
+@layer utilities {
+	.scrollbar-thin::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-track {
+		@apply bg-gray-100 dark:bg-gray-800;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-thumb {
+		@apply bg-gray-300 rounded-full dark:bg-gray-600;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+		@apply bg-gray-400 dark:bg-gray-500;
+	}
+
+	/* Theme transition utilities */
+	.theme-transition {
+		transition: background-color 0.3s ease, color 0.3s ease,
+			border-color 0.3s ease;
 	}
 }

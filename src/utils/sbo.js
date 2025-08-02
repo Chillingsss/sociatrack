@@ -10,7 +10,7 @@ export async function getProfile(userId) {
 	formData.append("operation", "getProfile");
 	formData.append("json", JSON.stringify({ user_id: userId }));
 
-	const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+	const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 	// Assuming backend returns an array of user objects
 	return response.data && Array.isArray(response.data)
 		? response.data[0]
@@ -23,7 +23,7 @@ export async function getPosts() {
 	const formData = new FormData();
 	formData.append("operation", "getPosts");
 
-	const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+	const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 	return response.data && Array.isArray(response.data) ? response.data : [];
 }
 
@@ -34,7 +34,7 @@ export async function getPostsWithUserReactions(userId) {
 	formData.append("operation", "getPostsWithUserReactions");
 	formData.append("json", JSON.stringify({ user_id: userId }));
 
-	const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+	const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 	return response.data && Array.isArray(response.data) ? response.data : [];
 }
 
@@ -52,7 +52,7 @@ export async function addReaction(userId, postId, reactionType) {
 		})
 	);
 
-	const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+	const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 	return response.data;
 }
 
@@ -92,7 +92,7 @@ export async function createPost(userId, caption, imageFiles) {
 		})
 	);
 
-	const response = await axios.post(`${apiUrl}/faculty.php`, postFormData);
+	const response = await axios.post(`${apiUrl}/sbo.php`, postFormData);
 	return response.data;
 }
 
@@ -110,19 +110,47 @@ export async function updatePost(userId, postId, caption) {
 		})
 	);
 
-	const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+	const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 	return response.data;
 }
 
-// Faculty Attendance API Functions
-export async function getStudentsInTribe(facultyId) {
+// SBO Attendance API Functions
+export async function getAllTribes() {
+	try {
+		const apiUrl = getDecryptedApiUrl();
+		const formData = new FormData();
+		formData.append("operation", "getAllTribes");
+
+		const response = await axios.post(`${apiUrl}/sbo.php`, formData);
+
+		if (Array.isArray(response.data)) {
+			return {
+				success: true,
+				tribes: response.data,
+			};
+		}
+
+		return {
+			success: false,
+			tribes: [],
+		};
+	} catch (error) {
+		console.error("Error fetching tribes:", error);
+		return {
+			success: false,
+			tribes: [],
+		};
+	}
+}
+
+export async function getStudentsInTribe(tribeId) {
 	try {
 		const apiUrl = getDecryptedApiUrl();
 		const formData = new FormData();
 		formData.append("operation", "getStudentsInTribe");
-		formData.append("json", JSON.stringify({ facultyId }));
+		formData.append("json", JSON.stringify({ tribeId }));
 
-		const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+		const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 
 		if (Array.isArray(response.data)) {
 			return {
@@ -150,7 +178,7 @@ export async function getAttendanceSessions() {
 		const formData = new FormData();
 		formData.append("operation", "getAttendanceSessions");
 
-		const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+		const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 
 		if (Array.isArray(response.data)) {
 			return {
@@ -172,14 +200,14 @@ export async function getAttendanceSessions() {
 	}
 }
 
-export async function getTodayAttendance(facultyId) {
+export async function getTodayAttendance(sboId) {
 	try {
 		const apiUrl = getDecryptedApiUrl();
 		const formData = new FormData();
 		formData.append("operation", "getTodayAttendance");
-		formData.append("json", JSON.stringify({ facultyId }));
+		formData.append("json", JSON.stringify({ sboId }));
 
-		const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+		const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 
 		if (Array.isArray(response.data)) {
 			return {
@@ -201,7 +229,7 @@ export async function getTodayAttendance(facultyId) {
 	}
 }
 
-export async function processAttendance(facultyId, studentId, sessionId) {
+export async function processAttendance(sboId, studentId, sessionId) {
 	try {
 		const apiUrl = getDecryptedApiUrl();
 		const formData = new FormData();
@@ -209,13 +237,13 @@ export async function processAttendance(facultyId, studentId, sessionId) {
 		formData.append(
 			"json",
 			JSON.stringify({
-				facultyId,
+				sboId,
 				studentId,
 				sessionId,
 			})
 		);
 
-		const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+		const response = await axios.post(`${apiUrl}/sbo.php`, formData);
 		return response.data;
 	} catch (error) {
 		console.error("Error processing attendance:", error);

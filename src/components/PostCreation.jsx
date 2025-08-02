@@ -71,7 +71,7 @@ export default function PostCreation({ userId, onPostCreated, profile }) {
 	};
 
 	return (
-		<div className="p-4 mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+		<div className="p-4 mb-6 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700">
 			<form onSubmit={handlePost}>
 				{/* Header with Avatar */}
 				<div className="flex items-center mb-4">

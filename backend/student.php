@@ -59,6 +59,31 @@
         return json_encode(array("success" => false, "message" => "Failed to add comment"));
       }
     }
+
+    function getStudentAttendanceRecords($json)
+    {
+      include "connection.php";
+
+      $json = json_decode($json, true);
+      $studentId = $json['studentId'];
+
+      // Set MySQL timezone to Philippines
+      $conn->exec("SET time_zone = '+08:00'");
+
+      $sql = "SELECT a.*, b.attendanceS_name as session_name, c.user_firstname, c.user_lastname, d.userL_name
+              FROM tblattendance a
+              INNER JOIN tblattendancesession b ON a.attendance_sessionId = b.attendanceS_id
+              INNER JOIN tbluser c ON a.attendance_facultyId = c.user_id
+              INNER JOIN tbluserlevel d ON c.user_userlevelId = d.userL_id
+              WHERE a.attendance_studentId = :studentId
+              ORDER BY a.attendance_timeIn DESC";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(':studentId', $studentId);
+      $stmt->execute();
+
+      $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      return json_encode($result);
+    }
   }
 
   $operation = isset($_POST["operation"]) ? $_POST["operation"] : "0";
@@ -75,6 +100,9 @@
       break;
     case "addComment":
       echo $user->addComment($json);
+      break;
+    case "getStudentAttendanceRecords":
+      echo $user->getStudentAttendanceRecords($json);
       break;
     default:
       echo json_encode("WALA KA NAGBUTANG OG OPERATION SA UBOS HAHAHHA BOBO");

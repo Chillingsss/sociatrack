@@ -784,7 +784,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 		<>
 			{/* No Posts Message */}
 			{(!localPosts || localPosts.length === 0) && (
-				<div className="flex flex-col justify-center items-center px-6 py-16 bg-white rounded-2xl shadow dark:bg-gray-800">
+				<div className="flex flex-col justify-center items-center px-6 py-16 bg-gray-50 rounded-2xl shadow dark:bg-gray-800">
 					<div className="max-w-md text-center">
 						{/* Icon */}
 						<div className="mb-6">
@@ -840,7 +840,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 					{localPosts.map((post) => (
 						<div
 							key={post.post_id}
-							className="p-5 bg-white rounded-2xl shadow dark:bg-gray-800"
+							className="p-5 bg-gray-50 rounded-2xl shadow dark:bg-gray-800"
 						>
 							<div className="flex items-center mb-3">
 								<img
@@ -897,7 +897,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 
 												{/* Dropdown Menu */}
 												{showDropdown === post.post_id && (
-													<div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
+													<div className="absolute right-0 top-full mt-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
 														<button
 															onClick={(e) => handleEditPostClick(post, e)}
 															onMouseDown={(e) => e.stopPropagation()}
@@ -987,7 +987,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 											ref={reactionDetailsRef}
 											onMouseEnter={() => setShowReactionDetails(post.post_id)}
 											onMouseLeave={() => setShowReactionDetails(null)}
-											className="hidden absolute left-0 bottom-full z-20 p-3 mb-2 bg-white rounded-lg border border-gray-200 shadow-lg md:block dark:bg-gray-800 dark:border-gray-600 min-w-64"
+											className="hidden absolute left-0 bottom-full z-20 p-3 mb-2 bg-gray-50 rounded-lg border border-gray-200 shadow-lg md:block dark:bg-gray-800 dark:border-gray-600 min-w-64"
 										>
 											<ReactionDetailsModal
 												postId={post.post_id}
@@ -1039,7 +1039,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 											ref={reactionPopupRef}
 											onMouseEnter={handleReactionPopupMouseEnter}
 											onMouseLeave={handleReactionPopupMouseLeave}
-											className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-white rounded-full border border-gray-200 shadow-lg dark:bg-gray-800 dark:border-gray-600"
+											className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-gray-50 rounded-full border border-gray-200 shadow-lg dark:bg-gray-800 dark:border-gray-600"
 										>
 											{/* Like */}
 											<button
@@ -1121,7 +1121,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 											ref={reactionPopupRef}
 											onMouseEnter={handleReactionPopupMouseEnter}
 											onMouseLeave={handleReactionPopupMouseLeave}
-											className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-white rounded-full border border-gray-200 shadow-lg reaction-popup dark:bg-gray-800 dark:border-gray-600"
+											className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-gray-50 rounded-full border border-gray-200 shadow-lg reaction-popup dark:bg-gray-800 dark:border-gray-600"
 										>
 											{/* Like */}
 											<button

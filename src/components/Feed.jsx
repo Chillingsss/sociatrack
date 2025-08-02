@@ -782,409 +782,473 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 
 	return (
 		<>
-			<div className="flex flex-col gap-6">
-				{localPosts.map((post) => (
-					<div
-						key={post.post_id}
-						className="p-5 bg-white rounded-2xl shadow dark:bg-gray-800"
-					>
-						<div className="flex items-center mb-3">
-							<img
-								src={
-									post.user_avatar ||
-									`https://ui-avatars.com/api/?name=${encodeURIComponent(
-										post.user_firstname + " " + post.user_lastname
-									)}`
-								}
-								alt={post.user_firstname + " " + post.user_lastname}
-								className="mr-3 w-10 h-10 rounded-full"
-							/>
-							<div className="flex-1">
-								<span className="font-semibold text-gray-800 dark:text-gray-100">
-									{post.user_firstname + " " + post.user_lastname}
-								</span>
-								<div className="text-sm text-gray-500 dark:text-gray-400">
-									{new Date(post.post_createdAt).toLocaleString("en-PH", {
-										timeZone: "Asia/Manila",
-										year: "numeric",
-										month: "long",
-										day: "numeric",
-										hour: "numeric",
-										minute: "2-digit",
-										hour12: true,
-									})}
-								</div>
-							</div>
-
-							{/* 3-dots menu - only show for post owner */}
-							{(() => {
-								const canEdit = canEditPost(post);
-								return (
-									canEdit && (
-										<div className="relative" ref={dropdownRef}>
-											<button
-												onClick={() => handleDropdownToggle(post.post_id)}
-												className="p-2 text-gray-500 rounded-full transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-											>
-												<svg
-													className="w-5 h-5"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-												>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-													/>
-												</svg>
-											</button>
-
-											{/* Dropdown Menu */}
-											{showDropdown === post.post_id && (
-												<div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
-													<button
-														onClick={(e) => handleEditPostClick(post, e)}
-														onMouseDown={(e) => e.stopPropagation()}
-														className="flex items-center px-4 py-2 w-full text-sm text-gray-700 transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-													>
-														<svg
-															className="mr-2 w-4 h-4"
-															fill="none"
-															stroke="currentColor"
-															viewBox="0 0 24 24"
-														>
-															<path
-																strokeLinecap="round"
-																strokeLinejoin="round"
-																strokeWidth={2}
-																d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-															/>
-														</svg>
-														Edit post
-													</button>
-												</div>
-											)}
-										</div>
-									)
-								);
-							})()}
+			{/* No Posts Message */}
+			{(!localPosts || localPosts.length === 0) && (
+				<div className="flex flex-col justify-center items-center px-6 py-16 bg-white rounded-2xl shadow dark:bg-gray-800">
+					<div className="max-w-md text-center">
+						{/* Icon */}
+						<div className="mb-6">
+							<svg
+								className="mx-auto w-20 h-20 text-gray-300 dark:text-gray-600"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={1.5}
+									d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+								/>
+							</svg>
 						</div>
 
-						{/* Post Caption - Editable */}
-						{(() => {
-							return editingPost === post.post_id ? (
-								<div className="mb-2">
-									<textarea
-										value={editCaption}
-										onChange={(e) => setEditCaption(e.target.value)}
-										className="p-3 w-full text-gray-900 rounded-lg border border-gray-300 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-blue-400"
-										rows="3"
-										placeholder="What's on your mind?"
-										autoFocus
-									/>
-									<div className="flex justify-end mt-2 space-x-2">
-										<button
-											onClick={handleCancelEdit}
-											className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
-										>
-											Cancel
-										</button>
-										<button
-											onClick={() => handleSaveEdit(post.post_id)}
-											className="px-4 py-2 text-sm text-white bg-blue-500 rounded-lg transition-colors hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
-										>
-											Save
-										</button>
-									</div>
-								</div>
-							) : (
-								<p className="mb-2 text-gray-900 dark:text-gray-100">
-									{post.post_caption}
-								</p>
-							);
-						})()}
+						{/* Main Message */}
+						<h3 className="mb-3 text-2xl font-semibold text-gray-700 dark:text-gray-300">
+							No Posts Yet
+						</h3>
 
-						{post.image_files && renderImages(post.image_files, post)}
+						{/* Encouraging Text */}
+						<p className="mb-6 leading-relaxed text-gray-500 dark:text-gray-400">
+							Be the first to share something! Start a conversation, share your
+							thoughts, or post an update to connect with your community.
+						</p>
 
-						{/* Reaction Counts */}
-						{getTotalReactions(post) && (
-							<div className="relative">
-								<div
-									className="flex items-center mt-3 mb-2 text-sm text-gray-600 transition-colors cursor-pointer dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-									onMouseEnter={() => handleReactionCountHover(post.post_id)}
-									onMouseLeave={handleReactionCountLeave}
-									onClick={(e) => {
-										e.preventDefault();
-										e.stopPropagation();
-										handleReactionCountClick(post.post_id);
-									}}
-								>
-									<span className="mr-2">{getTotalReactions(post).icons}</span>
-									<span>{getTotalReactions(post).text}</span>
-								</div>
-
-								{/* Desktop Hover Modal */}
-								{showReactionDetails === post.post_id && (
-									<div
-										ref={reactionDetailsRef}
-										onMouseEnter={() => setShowReactionDetails(post.post_id)}
-										onMouseLeave={() => setShowReactionDetails(null)}
-										className="hidden absolute left-0 bottom-full z-20 p-3 mb-2 bg-white rounded-lg border border-gray-200 shadow-lg md:block dark:bg-gray-800 dark:border-gray-600 min-w-64"
-									>
-										<ReactionDetailsModal postId={post.post_id} isOpen={true} />
-									</div>
-								)}
+						{/* Call to Action */}
+						<div className="flex flex-col gap-3 justify-center items-center sm:flex-row">
+							<div className="flex items-center text-sm text-gray-400 dark:text-gray-500">
+								<span className="mr-2">✨</span>
+								<span>
+									Share your first post and get the conversation started!
+								</span>
 							</div>
-						)}
+						</div>
 
-						{/* Reaction Buttons - Facebook Style */}
-						<div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
-							{/* Like Button with Hover Reactions */}
-							<div className="relative group">
-								<button
-									onClick={() =>
-										handleReaction(
-											post.post_id,
-											getCurrentUserReaction(post) || "like"
-										)
+						{/* Visual Elements */}
+						<div className="flex justify-center mt-8 space-x-2">
+							<div className="w-2 h-2 bg-blue-200 rounded-full dark:bg-blue-800"></div>
+							<div className="w-2 h-2 bg-blue-300 rounded-full dark:bg-blue-700"></div>
+							<div className="w-2 h-2 bg-blue-400 rounded-full dark:bg-blue-600"></div>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Posts List */}
+			{localPosts && localPosts.length > 0 && (
+				<div className="flex flex-col gap-6">
+					{localPosts.map((post) => (
+						<div
+							key={post.post_id}
+							className="p-5 bg-white rounded-2xl shadow dark:bg-gray-800"
+						>
+							<div className="flex items-center mb-3">
+								<img
+									src={
+										post.user_avatar ||
+										`https://ui-avatars.com/api/?name=${encodeURIComponent(
+											post.user_firstname + " " + post.user_lastname
+										)}`
 									}
-									onMouseEnter={() => handleLikeButtonMouseEnter(post.post_id)}
-									onMouseLeave={handleLikeButtonMouseLeave}
-									onTouchStart={() => handleLikeButtonTouchStart(post.post_id)}
-									onTouchEnd={handleLikeButtonTouchEnd}
-									onTouchMove={handleLikeButtonTouchMove}
-									onContextMenu={handleLikeButtonContextMenu}
-									className={`flex items-center px-3 py-2 rounded-lg transition-colors select-none touch-manipulation ${
-										getCurrentUserReaction(post)
-											? `bg-gray-100 ${getDefaultReactionColor( post )} dark:bg-gray-700`
-											: "text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
-									}`}
-								>
-									<span className="mr-2 text-lg">
-										{getDefaultReactionEmoji(post)}
+									alt={post.user_firstname + " " + post.user_lastname}
+									className="mr-3 w-10 h-10 rounded-full"
+								/>
+								<div className="flex-1">
+									<span className="font-semibold text-gray-800 dark:text-gray-100">
+										{post.user_firstname + " " + post.user_lastname}
 									</span>
+									<div className="text-sm text-gray-500 dark:text-gray-400">
+										{new Date(post.post_createdAt).toLocaleString("en-PH", {
+											timeZone: "Asia/Manila",
+											year: "numeric",
+											month: "long",
+											day: "numeric",
+											hour: "numeric",
+											minute: "2-digit",
+											hour12: true,
+										})}
+									</div>
+								</div>
+
+								{/* 3-dots menu - only show for post owner */}
+								{(() => {
+									const canEdit = canEditPost(post);
+									return (
+										canEdit && (
+											<div className="relative" ref={dropdownRef}>
+												<button
+													onClick={() => handleDropdownToggle(post.post_id)}
+													className="p-2 text-gray-500 rounded-full transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+												>
+													<svg
+														className="w-5 h-5"
+														fill="none"
+														stroke="currentColor"
+														viewBox="0 0 24 24"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															strokeWidth={2}
+															d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+														/>
+													</svg>
+												</button>
+
+												{/* Dropdown Menu */}
+												{showDropdown === post.post_id && (
+													<div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
+														<button
+															onClick={(e) => handleEditPostClick(post, e)}
+															onMouseDown={(e) => e.stopPropagation()}
+															className="flex items-center px-4 py-2 w-full text-sm text-gray-700 transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+														>
+															<svg
+																className="mr-2 w-4 h-4"
+																fill="none"
+																stroke="currentColor"
+																viewBox="0 0 24 24"
+															>
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	strokeWidth={2}
+																	d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+																/>
+															</svg>
+															Edit post
+														</button>
+													</div>
+												)}
+											</div>
+										)
+									);
+								})()}
+							</div>
+
+							{/* Post Caption - Editable */}
+							{(() => {
+								return editingPost === post.post_id ? (
+									<div className="mb-2">
+										<textarea
+											value={editCaption}
+											onChange={(e) => setEditCaption(e.target.value)}
+											className="p-3 w-full text-gray-900 rounded-lg border border-gray-300 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-blue-400"
+											rows="3"
+											placeholder="What's on your mind?"
+											autoFocus
+										/>
+										<div className="flex justify-end mt-2 space-x-2">
+											<button
+												onClick={handleCancelEdit}
+												className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+											>
+												Cancel
+											</button>
+											<button
+												onClick={() => handleSaveEdit(post.post_id)}
+												className="px-4 py-2 text-sm text-white bg-blue-500 rounded-lg transition-colors hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+											>
+												Save
+											</button>
+										</div>
+									</div>
+								) : (
+									<p className="mb-2 text-gray-900 dark:text-gray-100">
+										{post.post_caption}
+									</p>
+								);
+							})()}
+
+							{post.image_files && renderImages(post.image_files, post)}
+
+							{/* Reaction Counts */}
+							{getTotalReactions(post) && (
+								<div className="relative">
+									<div
+										className="flex items-center mt-3 mb-2 text-sm text-gray-600 transition-colors cursor-pointer dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+										onMouseEnter={() => handleReactionCountHover(post.post_id)}
+										onMouseLeave={handleReactionCountLeave}
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											handleReactionCountClick(post.post_id);
+										}}
+									>
+										<span className="mr-2">
+											{getTotalReactions(post).icons}
+										</span>
+										<span>{getTotalReactions(post).text}</span>
+									</div>
+
+									{/* Desktop Hover Modal */}
+									{showReactionDetails === post.post_id && (
+										<div
+											ref={reactionDetailsRef}
+											onMouseEnter={() => setShowReactionDetails(post.post_id)}
+											onMouseLeave={() => setShowReactionDetails(null)}
+											className="hidden absolute left-0 bottom-full z-20 p-3 mb-2 bg-white rounded-lg border border-gray-200 shadow-lg md:block dark:bg-gray-800 dark:border-gray-600 min-w-64"
+										>
+											<ReactionDetailsModal
+												postId={post.post_id}
+												isOpen={true}
+											/>
+										</div>
+									)}
+								</div>
+							)}
+
+							{/* Reaction Buttons - Facebook Style */}
+							<div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
+								{/* Like Button with Hover Reactions */}
+								<div className="relative group">
+									<button
+										onClick={() =>
+											handleReaction(
+												post.post_id,
+												getCurrentUserReaction(post) || "like"
+											)
+										}
+										onMouseEnter={() =>
+											handleLikeButtonMouseEnter(post.post_id)
+										}
+										onMouseLeave={handleLikeButtonMouseLeave}
+										onTouchStart={() =>
+											handleLikeButtonTouchStart(post.post_id)
+										}
+										onTouchEnd={handleLikeButtonTouchEnd}
+										onTouchMove={handleLikeButtonTouchMove}
+										onContextMenu={handleLikeButtonContextMenu}
+										className={`flex items-center px-3 py-2 rounded-lg transition-colors select-none touch-manipulation ${
+											getCurrentUserReaction(post)
+												? `bg-gray-100 ${getDefaultReactionColor( post )} dark:bg-gray-700`
+												: "text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
+										}`}
+									>
+										<span className="mr-2 text-lg">
+											{getDefaultReactionEmoji(post)}
+										</span>
+										<span className="text-sm font-medium">
+											{getDefaultReactionText(post)}
+										</span>
+									</button>
+
+									{/* Hover Reaction Options */}
+									{showReactions === post.post_id && (
+										<div
+											ref={reactionPopupRef}
+											onMouseEnter={handleReactionPopupMouseEnter}
+											onMouseLeave={handleReactionPopupMouseLeave}
+											className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-white rounded-full border border-gray-200 shadow-lg dark:bg-gray-800 dark:border-gray-600"
+										>
+											{/* Like */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "like");
+													setShowReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Like"
+											>
+												<span className="text-2xl">👍</span>
+											</button>
+
+											{/* Love */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "love");
+													setShowReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Love"
+											>
+												<span className="text-2xl">❤️</span>
+											</button>
+
+											{/* Haha */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "haha");
+													setShowReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Haha"
+											>
+												<span className="text-2xl">😂</span>
+											</button>
+
+											{/* Sad */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "sad");
+													setShowReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Sad"
+											>
+												<span className="text-2xl">😢</span>
+											</button>
+
+											{/* Angry */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "angry");
+													setShowReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Angry"
+											>
+												<span className="text-2xl">😠</span>
+											</button>
+
+											{/* Wow */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "wow");
+													setShowReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Wow"
+											>
+												<span className="text-2xl">😮</span>
+											</button>
+										</div>
+									)}
+
+									{/* Mobile Long Press Reactions */}
+									{showMobileReactions === post.post_id && (
+										<div
+											ref={reactionPopupRef}
+											onMouseEnter={handleReactionPopupMouseEnter}
+											onMouseLeave={handleReactionPopupMouseLeave}
+											className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-white rounded-full border border-gray-200 shadow-lg reaction-popup dark:bg-gray-800 dark:border-gray-600"
+										>
+											{/* Like */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "like");
+													setShowMobileReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Like"
+											>
+												<span className="text-2xl">👍</span>
+											</button>
+
+											{/* Love */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "love");
+													setShowMobileReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Love"
+											>
+												<span className="text-2xl">❤️</span>
+											</button>
+
+											{/* Haha */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "haha");
+													setShowMobileReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Haha"
+											>
+												<span className="text-2xl">😂</span>
+											</button>
+
+											{/* Sad */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "sad");
+													setShowMobileReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Sad"
+											>
+												<span className="text-2xl">😢</span>
+											</button>
+
+											{/* Angry */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "angry");
+													setShowMobileReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Angry"
+											>
+												<span className="text-2xl">😠</span>
+											</button>
+
+											{/* Wow */}
+											<button
+												onClick={() => {
+													handleReaction(post.post_id, "wow");
+													setShowMobileReactions(null);
+												}}
+												className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+												title="Wow"
+											>
+												<span className="text-2xl">😮</span>
+											</button>
+										</div>
+									)}
+								</div>
+
+								{/* Comment Button */}
+								<button
+									onClick={() => handleViewAllComments(post)}
+									className="flex items-center px-3 py-2 text-gray-500 rounded-lg transition-colors hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
+								>
+									<svg
+										className="mr-2 w-5 h-5"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+										/>
+									</svg>
 									<span className="text-sm font-medium">
-										{getDefaultReactionText(post)}
+										Comment{" "}
+										{postComments[post.post_id] &&
+											postComments[post.post_id].length > 0 &&
+											`(${postComments[post.post_id].length})`}
 									</span>
 								</button>
 
-								{/* Hover Reaction Options */}
-								{showReactions === post.post_id && (
-									<div
-										ref={reactionPopupRef}
-										onMouseEnter={handleReactionPopupMouseEnter}
-										onMouseLeave={handleReactionPopupMouseLeave}
-										className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-white rounded-full border border-gray-200 shadow-lg dark:bg-gray-800 dark:border-gray-600"
+								{/* Share Button */}
+								<button className="flex items-center px-3 py-2 text-gray-500 rounded-lg transition-colors hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20">
+									<svg
+										className="mr-2 w-5 h-5"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
 									>
-										{/* Like */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "like");
-												setShowReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Like"
-										>
-											<span className="text-2xl">👍</span>
-										</button>
-
-										{/* Love */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "love");
-												setShowReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Love"
-										>
-											<span className="text-2xl">❤️</span>
-										</button>
-
-										{/* Haha */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "haha");
-												setShowReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Haha"
-										>
-											<span className="text-2xl">😂</span>
-										</button>
-
-										{/* Sad */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "sad");
-												setShowReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Sad"
-										>
-											<span className="text-2xl">😢</span>
-										</button>
-
-										{/* Angry */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "angry");
-												setShowReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Angry"
-										>
-											<span className="text-2xl">😠</span>
-										</button>
-
-										{/* Wow */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "wow");
-												setShowReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Wow"
-										>
-											<span className="text-2xl">😮</span>
-										</button>
-									</div>
-								)}
-
-								{/* Mobile Long Press Reactions */}
-								{showMobileReactions === post.post_id && (
-									<div
-										ref={reactionPopupRef}
-										onMouseEnter={handleReactionPopupMouseEnter}
-										onMouseLeave={handleReactionPopupMouseLeave}
-										className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-white rounded-full border border-gray-200 shadow-lg reaction-popup dark:bg-gray-800 dark:border-gray-600"
-									>
-										{/* Like */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "like");
-												setShowMobileReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Like"
-										>
-											<span className="text-2xl">👍</span>
-										</button>
-
-										{/* Love */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "love");
-												setShowMobileReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Love"
-										>
-											<span className="text-2xl">❤️</span>
-										</button>
-
-										{/* Haha */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "haha");
-												setShowMobileReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Haha"
-										>
-											<span className="text-2xl">😂</span>
-										</button>
-
-										{/* Sad */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "sad");
-												setShowMobileReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Sad"
-										>
-											<span className="text-2xl">😢</span>
-										</button>
-
-										{/* Angry */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "angry");
-												setShowMobileReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Angry"
-										>
-											<span className="text-2xl">😠</span>
-										</button>
-
-										{/* Wow */}
-										<button
-											onClick={() => {
-												handleReaction(post.post_id, "wow");
-												setShowMobileReactions(null);
-											}}
-											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-											title="Wow"
-										>
-											<span className="text-2xl">😮</span>
-										</button>
-									</div>
-								)}
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+										/>
+									</svg>
+									<span className="text-sm font-medium">Share</span>
+								</button>
 							</div>
 
-							{/* Comment Button */}
-							<button
-								onClick={() => handleViewAllComments(post)}
-								className="flex items-center px-3 py-2 text-gray-500 rounded-lg transition-colors hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
-							>
-								<svg
-									className="mr-2 w-5 h-5"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth={2}
-										d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-									/>
-								</svg>
-								<span className="text-sm font-medium">
-									Comment{" "}
-									{postComments[post.post_id] &&
-										postComments[post.post_id].length > 0 &&
-										`(${postComments[post.post_id].length})`}
-								</span>
-							</button>
-
-							{/* Share Button */}
-							<button className="flex items-center px-3 py-2 text-gray-500 rounded-lg transition-colors hover:text-blue-500 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20">
-								<svg
-									className="mr-2 w-5 h-5"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth={2}
-										d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-									/>
-								</svg>
-								<span className="text-sm font-medium">Share</span>
-							</button>
+							{/* Comments Section */}
+							{renderComments(post)}
 						</div>
-
-						{/* Comments Section */}
-						{renderComments(post)}
-					</div>
-				))}
-			</div>
+					))}
+				</div>
+			)}
 
 			{/* Image Modal */}
 			<ImageModal

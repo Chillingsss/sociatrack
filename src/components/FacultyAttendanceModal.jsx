@@ -510,7 +510,7 @@ const FacultyAttendanceModal = ({
 
 		if (!record) return "No record";
 		if (record.attendance_timeIn && !record.attendance_timeOut)
-			return "Checked In";
+			return "Time In";
 		if (record.attendance_timeIn && record.attendance_timeOut)
 			return "Completed";
 		return "Absent";
@@ -540,9 +540,9 @@ const FacultyAttendanceModal = ({
 		<>
 			<Toaster position="top-right" />
 			<div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black bg-opacity-50">
-				<div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+				<div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
 					{/* Header */}
-					<div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
+					<div className="flex flex-shrink-0 justify-between items-center p-6 border-b dark:border-gray-700">
 						<h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
 							Faculty Attendance System
 						</h2>
@@ -554,161 +554,205 @@ const FacultyAttendanceModal = ({
 						</button>
 					</div>
 
-					{/* Session Selection */}
-					<div className="p-6 border-b dark:border-gray-700">
-						<h3 className="mb-4 text-lg font-semibold text-gray-700 dark:text-gray-300">
-							Select Session
-						</h3>
-						<div className="flex flex-wrap gap-4">
-							{sessions.map((session) => (
-								<button
-									key={session.attendanceS_id}
-									onClick={() => setSelectedSession(session)}
-									className={`px-4 py-2 rounded-lg transition-colors duration-200 ${
-										selectedSession?.attendanceS_id === session.attendanceS_id
-											? "bg-blue-600 text-white"
-											: session.attendanceS_status === 1
-											? "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-											: "bg-red-200 text-red-700 cursor-not-allowed dark:bg-red-900 dark:text-red-300"
-									}`}
-									disabled={session.attendanceS_status === 0}
-								>
-									{session.attendanceS_name}
-									{session.attendanceS_status === 0 && " (Inactive)"}
-								</button>
-							))}
-						</div>
-					</div>
-
-					{/* QR Scanner Section */}
-					{selectedSession && (
+					{/* Scrollable Content Area */}
+					<div className="overflow-y-auto flex-1">
+						{/* Session Selection */}
 						<div className="p-6 border-b dark:border-gray-700">
-							<div className="flex justify-between items-center mb-4">
-								<h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-									QR Code Scanner
-								</h3>
-								<button
-									onClick={showScanner ? stopScanner : startScanner}
-									disabled={loading || selectedSession.attendanceS_status === 0}
-									className={`px-4 py-2 rounded-lg text-white transition-colors duration-200 ${
-										showScanner
-											? "bg-red-600 hover:bg-red-700"
-											: "bg-green-600 hover:bg-green-700"
-									} disabled:bg-gray-400 disabled:cursor-not-allowed`}
-								>
-									{loading
-										? "Processing..."
-										: showScanner
-										? "Stop Scanner"
-										: "Start Scanner"}
-								</button>
+							<h3 className="mb-4 text-lg font-semibold text-gray-700 dark:text-gray-300">
+								Select Session
+							</h3>
+							<div className="flex flex-wrap gap-4">
+								{sessions.map((session) => (
+									<button
+										key={session.attendanceS_id}
+										onClick={() => setSelectedSession(session)}
+										className={`px-4 py-2 rounded-lg transition-colors duration-200 ${
+											selectedSession?.attendanceS_id === session.attendanceS_id
+												? "bg-blue-600 text-white"
+												: session.attendanceS_status === 1
+												? "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+												: "bg-red-200 text-red-700 cursor-not-allowed dark:bg-red-900 dark:text-red-300"
+										}`}
+										disabled={session.attendanceS_status === 0}
+									>
+										{session.attendanceS_name}
+										{session.attendanceS_status === 0 && " (Inactive)"}
+									</button>
+								))}
 							</div>
+						</div>
 
-							{showScanner && (
-								<div className="flex justify-center">
-									<div className="relative">
-										<video
-											ref={videoRef}
-											className="w-80 h-60 bg-black rounded-lg"
-											playsInline
-										/>
-										<div className="absolute inset-0 rounded-lg border-2 border-green-500 pointer-events-none">
-											<div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-green-500"></div>
-											<div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-green-500"></div>
-											<div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-green-500"></div>
-											<div className="absolute right-4 bottom-4 w-6 h-6 border-r-2 border-b-2 border-green-500"></div>
+						{/* QR Scanner Section */}
+						{selectedSession && (
+							<div className="p-6 border-b dark:border-gray-700">
+								<div className="flex justify-between items-center mb-4">
+									<h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+										QR Code Scanner
+									</h3>
+									<button
+										onClick={showScanner ? stopScanner : startScanner}
+										disabled={
+											loading || selectedSession.attendanceS_status === 0
+										}
+										className={`px-4 py-2 rounded-lg text-white transition-colors duration-200 ${
+											showScanner
+												? "bg-red-600 hover:bg-red-700"
+												: "bg-green-600 hover:bg-green-700"
+										} disabled:bg-gray-400 disabled:cursor-not-allowed`}
+									>
+										{loading
+											? "Processing..."
+											: showScanner
+											? "Stop Scanner"
+											: "Start Scanner"}
+									</button>
+								</div>
+
+								{showScanner && (
+									<div className="flex justify-center mb-4">
+										<div className="relative">
+											<video
+												ref={videoRef}
+												className="w-80 h-60 bg-black rounded-lg"
+												playsInline
+											/>
+											<div className="absolute inset-0 rounded-lg border-2 border-green-500 pointer-events-none">
+												<div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-green-500"></div>
+												<div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-green-500"></div>
+												<div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-green-500"></div>
+												<div className="absolute right-4 bottom-4 w-6 h-6 border-r-2 border-b-2 border-green-500"></div>
+											</div>
 										</div>
 									</div>
+								)}
+							</div>
+						)}
+
+						{/* Students List */}
+						<div className="p-4 sm:p-6">
+							<h3 className="mb-4 text-lg font-semibold text-gray-700 dark:text-gray-300">
+								Students in Your Tribe ({students.length})
+							</h3>
+
+							{students.length === 0 ? (
+								<p className="py-8 text-center text-gray-500 dark:text-gray-400">
+									No students found in your tribe.
+								</p>
+							) : (
+								<div className="space-y-3">
+									{students.map((student) => {
+										const status = getStudentAttendanceStatus(student.user_id);
+
+										// Ensure attendanceRecords is an array before calling find
+										const record = Array.isArray(attendanceRecords)
+											? attendanceRecords.find(
+													(r) =>
+														r.attendance_studentId === student.user_id &&
+														r.attendance_sessionId ===
+															selectedSession?.attendanceS_id
+											  )
+											: null;
+
+										return (
+											<div
+												key={student.user_id}
+												className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm transition-all duration-200 dark:bg-gray-700 dark:border-gray-600 hover:shadow-md"
+											>
+												{/* Mobile-first layout */}
+												<div className="flex gap-3 items-start">
+													{/* Avatar */}
+													<div className="flex-shrink-0">
+														{student.user_avatar ? (
+															<img
+																src={student.user_avatar}
+																alt={`${student.user_firstname} ${student.user_lastname}`}
+																className="object-cover w-12 h-12 rounded-full ring-2 ring-gray-100 sm:w-10 sm:h-10 dark:ring-gray-600"
+															/>
+														) : (
+															<div className="flex justify-center items-center w-12 h-12 font-semibold text-white bg-blue-500 rounded-full ring-2 ring-gray-100 sm:w-10 sm:h-10 dark:ring-gray-600">
+																{`${student.user_firstname?.charAt(0) || ""}${
+																	student.user_lastname?.charAt(0) || ""
+																}`}
+															</div>
+														)}
+													</div>
+
+													{/* Student Info */}
+													<div className="flex-1 min-w-0">
+														<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+															{/* Name and ID */}
+															<div className="min-w-0">
+																<p className="text-base font-semibold leading-tight text-gray-800 dark:text-gray-200">
+																	{student.user_firstname}{" "}
+																	{student.user_lastname}
+																</p>
+																<p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+																	ID: {student.user_id}
+																</p>
+															</div>
+
+															{/* Status Badge */}
+															<div className="flex-shrink-0">
+																<span
+																	className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium shadow-sm ${
+																		status === "Completed"
+																			? "bg-green-100 text-green-800 ring-1 ring-green-200 dark:bg-green-900 dark:text-green-200 dark:ring-green-700"
+																			: status === "Checked In"
+																			? "bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:ring-yellow-700"
+																			: "bg-red-100 text-red-800 ring-1 ring-red-200 dark:bg-red-900 dark:text-red-200 dark:ring-red-700"
+																	}`}
+																>
+																	{status === "Completed" && "✅ "}
+																	{status === "Checked In" && "🟡 "}
+																	{(status === "Absent" ||
+																		status === "No record") &&
+																		"❌ "}
+																	{status}
+																</span>
+															</div>
+														</div>
+
+														{/* Attendance Details */}
+														{record && (
+															<div className="p-3 mt-3 bg-gray-50 rounded-lg dark:bg-gray-800">
+																<div className="flex flex-col gap-2 text-sm">
+																	<div className="flex gap-2 items-center text-gray-600 dark:text-gray-300">
+																		<span className="font-medium">📅</span>
+																		<span>
+																			{formatDate(record.attendance_timeIn)}
+																		</span>
+																	</div>
+																	<div className="flex flex-col gap-2 text-gray-600 sm:flex-row sm:gap-4 dark:text-gray-300">
+																		<div className="flex gap-2 items-center">
+																			<span className="text-green-600 dark:text-green-400">
+																				🟢
+																			</span>
+																			<span className="font-medium">In:</span>
+																			<span>
+																				{formatTime(record.attendance_timeIn)}
+																			</span>
+																		</div>
+																		<div className="flex gap-2 items-center">
+																			<span className="text-red-600 dark:text-red-400">
+																				🔴
+																			</span>
+																			<span className="font-medium">Out:</span>
+																			<span>
+																				{formatTime(record.attendance_timeOut)}
+																			</span>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														)}
+													</div>
+												</div>
+											</div>
+										);
+									})}
 								</div>
 							)}
 						</div>
-					)}
-
-					{/* Students List */}
-					<div className="overflow-y-auto flex-1 p-6">
-						<h3 className="mb-4 text-lg font-semibold text-gray-700 dark:text-gray-300">
-							Students in Your Tribe ({students.length})
-						</h3>
-
-						{students.length === 0 ? (
-							<p className="py-8 text-center text-gray-500 dark:text-gray-400">
-								No students found in your tribe.
-							</p>
-						) : (
-							<div className="grid gap-3">
-								{students.map((student) => {
-									const status = getStudentAttendanceStatus(student.user_id);
-
-									// Ensure attendanceRecords is an array before calling find
-									const record = Array.isArray(attendanceRecords)
-										? attendanceRecords.find(
-												(r) =>
-													r.attendance_studentId === student.user_id &&
-													r.attendance_sessionId ===
-														selectedSession?.attendanceS_id
-										  )
-										: null;
-
-									return (
-										<div
-											key={student.user_id}
-											className="flex justify-between items-center p-4 bg-gray-50 rounded-lg dark:bg-gray-700"
-										>
-											<div className="flex gap-3 items-center">
-												{student.user_avatar ? (
-													<img
-														src={student.user_avatar}
-														alt={`${student.user_firstname} ${student.user_lastname}`}
-														className="object-cover w-10 h-10 rounded-full"
-													/>
-												) : (
-													<div className="flex justify-center items-center w-10 h-10 font-semibold text-white bg-blue-500 rounded-full">
-														{`${student.user_firstname?.charAt(0) || ""}${
-															student.user_lastname?.charAt(0) || ""
-														}`}
-													</div>
-												)}
-												<div>
-													<p className="font-medium text-gray-800 dark:text-gray-200">
-														{student.user_firstname} {student.user_lastname}
-													</p>
-													<p className="text-sm text-gray-500 dark:text-gray-400">
-														ID: {student.user_id}
-													</p>
-												</div>
-											</div>
-
-											<div className="text-right">
-												<div className="flex flex-col gap-1 items-end">
-													<span
-														className={`px-3 py-1 rounded-full text-sm font-medium ${
-															status === "Completed"
-																? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-																: status === "Checked In"
-																? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-																: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-														}`}
-													>
-														{status}
-													</span>
-													{record && (
-														<div className="text-xs text-gray-500 dark:text-gray-400">
-															<div className="mb-1 font-medium">
-																📅 {formatDate(record.attendance_timeIn)}
-															</div>
-															<div>
-																In: {formatTime(record.attendance_timeIn)} |
-																Out: {formatTime(record.attendance_timeOut)}
-															</div>
-														</div>
-													)}
-												</div>
-											</div>
-										</div>
-									);
-								})}
-							</div>
-						)}
 					</div>
 				</div>
 			</div>

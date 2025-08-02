@@ -116,7 +116,7 @@ const QRCodeModal = ({ isOpen, onClose, userId, userProfile }) => {
 	if (!isOpen) return null;
 
 	return (
-		<div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black bg-opacity-50">
+		<div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black bg-opacity-50 backdrop-blur-md">
 			<div className="p-4 mx-auto w-full max-w-md bg-white rounded-lg shadow-xl sm:p-6 dark:bg-gray-800">
 				{/* Header */}
 				<div className="flex justify-between items-center mb-4">
@@ -143,21 +143,27 @@ const QRCodeModal = ({ isOpen, onClose, userId, userProfile }) => {
 					</div>
 				)}
 
-				{/* QR Code */}
-				<div className="flex justify-center mb-4">
-					<div className="relative p-3 bg-white rounded-lg shadow-inner sm:p-4">
-						<canvas
-							ref={canvasRef}
-							className="w-48 max-w-full h-48 h-auto sm:w-64 sm:h-64"
-						/>
-						{/* Download Link - Top Right Corner */}
+				{/* QR Code Section */}
+				<div className="mb-4">
+					{/* Download Button - Above QR Code */}
+					<div className="flex justify-end mb-2">
 						<button
 							onClick={downloadQRCode}
-							className="absolute -top-2 -right-2 flex gap-1 items-center px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-full shadow-sm transition-all duration-200 hover:bg-emerald-100 hover:shadow-md hover:scale-105 active:scale-95 border border-emerald-200/50 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/50 dark:hover:bg-emerald-800/30"
+							className="flex gap-1 items-center px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-full shadow-sm transition-all duration-200 hover:bg-emerald-100 hover:shadow-md hover:scale-105 active:scale-95 border border-emerald-200/50 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/50 dark:hover:bg-emerald-800/30"
 						>
 							<Download className="w-3 h-3" />
-							<span>Download</span>
+							<span>Download QR Code</span>
 						</button>
+					</div>
+
+					{/* QR Code Container */}
+					<div className="flex justify-center">
+						<div className="p-3 bg-white rounded-lg shadow-inner sm:p-4">
+							<canvas
+								ref={canvasRef}
+								className="w-48 max-w-full h-48 h-auto sm:w-64 sm:h-64"
+							/>
+						</div>
 					</div>
 				</div>
 
@@ -187,7 +193,6 @@ const QRCodeModal = ({ isOpen, onClose, userId, userProfile }) => {
 					</button>
 				</div>
 			</div>
-
 			{/* Attendance Records Modal */}
 			{showAttendanceRecords && (
 				<div className="flex fixed inset-0 justify-center items-center p-4 bg-black bg-opacity-50 backdrop-blur-md z-80">

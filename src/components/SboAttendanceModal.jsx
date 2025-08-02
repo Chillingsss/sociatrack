@@ -19,6 +19,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Users,
+	QrCode,
 } from "lucide-react";
 import {
 	getAllTribes,
@@ -27,6 +28,7 @@ import {
 	getTodayAttendance,
 	processAttendance,
 } from "../utils/sbo";
+import QRCodeModal from "./QRCodeModal";
 
 const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 	const [tribes, setTribes] = useState([]);
@@ -46,6 +48,7 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 		const philippinesTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // Add 8 hours for UTC+8
 		return philippinesTime.toISOString().split("T")[0]; // Today's date in YYYY-MM-DD format
 	});
+	const [showQRCodeModal, setShowQRCodeModal] = useState(false);
 	const videoRef = useRef(null);
 	const codeReader = useRef(null);
 	const scrollContainerRef = useRef(null);
@@ -649,12 +652,23 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 						<h2 className="text-lg font-bold text-gray-800 sm:text-xl dark:text-gray-200">
 							SBO Attendance System
 						</h2>
-						<button
-							onClick={onClose}
-							className="p-1 text-2xl text-gray-500 rounded-full transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-						>
-							<X className="w-6 h-6" />
-						</button>
+						<div className="flex gap-2 items-center">
+							{/* QR Code Button for SBO */}
+							<button
+								onClick={() => setShowQRCodeModal(true)}
+								className="flex gap-2 items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg transition-colors hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-800/30"
+								title="Show my QR code for attendance"
+							>
+								<QrCode className="w-4 h-4" />
+								<span className="hidden sm:inline">My QR Code</span>
+							</button>
+							<button
+								onClick={onClose}
+								className="p-1 text-2xl text-gray-500 rounded-full transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+							>
+								<X className="w-6 h-6" />
+							</button>
+						</div>
 					</div>
 
 					{/* Scrollable Content Area */}
@@ -1073,6 +1087,14 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 					</button>
 				)}
 			</div>
+
+			{/* QR Code Modal for SBO */}
+			<QRCodeModal
+				isOpen={showQRCodeModal}
+				onClose={() => setShowQRCodeModal(false)}
+				userId={sboId}
+				userProfile={sboProfile}
+			/>
 		</>
 	);
 };

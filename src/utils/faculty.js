@@ -95,3 +95,21 @@ export async function createPost(userId, caption, imageFiles) {
 	const response = await axios.post(`${apiUrl}/faculty.php`, postFormData);
 	return response.data;
 }
+
+export async function updatePost(userId, postId, caption) {
+	const apiUrl = getDecryptedApiUrl();
+
+	const formData = new FormData();
+	formData.append("operation", "updatePost");
+	formData.append(
+		"json",
+		JSON.stringify({
+			userId: userId,
+			postId: postId,
+			caption: caption,
+		})
+	);
+
+	const response = await axios.post(`${apiUrl}/faculty.php`, formData);
+	return response.data;
+}

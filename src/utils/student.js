@@ -72,12 +72,7 @@ export const formatTimeAgo = (dateString) => {
 	const diffInMs = now.getTime() - date.getTime();
 	const diffInSeconds = Math.floor(diffInMs / 1000);
 
-	console.log("Time comparison:", {
-		dateString,
-		parsedDate: date.toISOString(),
-		now: now.toISOString(),
-		diffInSeconds,
-	});
+	// Handle negative differences (future dates) or very recent as "Just now"
 
 	// Handle negative differences (future dates) or very recent as "Just now"
 	if (diffInSeconds <= 5) {

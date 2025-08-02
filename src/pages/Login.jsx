@@ -146,35 +146,42 @@ export default function LoginPage() {
 	return (
 		<>
 			<Toaster position="top-right" />
-			<div className="flex min-h-screen bg-gradient-to-br via-green-900 to-green-800 from-green-950">
-				{/* Left Panel - Branding */}
-				<div className="hidden relative justify-center items-center lg:flex lg:w-1/2">
-					<div className="z-10 text-center text-white">
-						<div className="mb-8">
-							<div className="inline-flex justify-center items-center mb-6 w-24 h-24 rounded-2xl border backdrop-blur-sm bg-white/10 border-white/20">
+			<div className="flex min-h-screen bg-gradient-to-br from-green-50 via-green-100 to-emerald-50">
+				{/* Left Panel - Logo Section */}
+				<div className="hidden overflow-hidden relative bg-gradient-to-br from-green-800 via-green-900 to-emerald-900 lg:flex lg:w-2/5">
+					{/* Background Pattern */}
+					<div className="absolute inset-0 bg-gradient-to-br from-green-700/30 via-emerald-800/30 to-green-900/30"></div>
+
+					<div className="flex relative z-10 flex-col justify-center items-center p-12 w-full h-full text-center text-white">
+						<div className="flex flex-col justify-center items-center space-y-8">
+							<div className="inline-flex justify-center items-center w-32 h-32 rounded-3xl border shadow-2xl backdrop-blur-sm bg-white/10 border-white/20">
 								<img
 									src="/images/cocLogo.png"
 									alt="PHINMA Cagayan de Oro College Logo"
-									className="object-contain w-16 h-16"
+									className="object-contain w-20 h-20"
 								/>
 							</div>
-							<h1 className="mb-2 text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-lime-400">
-								PHINMA
-							</h1>
-							<h2 className="mb-1 text-2xl font-semibold text-white">
-								Cagayan de Oro College
-							</h2>
-							<p className="text-lg text-green-200">Social Media System</p>
-						</div>
+							<div className="space-y-4">
+								<h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-200 via-emerald-200 to-white">
+									PHINMA
+								</h1>
+								<h2 className="text-2xl font-semibold text-green-100">
+									Cagayan de Oro College
+								</h2>
+								<p className="text-lg text-green-200">Social Media System</p>
+							</div>
 
-						<div className="space-y-4 max-w-md">
-							<div className="flex items-center p-4 space-x-3 rounded-xl border backdrop-blur-sm bg-white/5 border-white/10">
-								<Shield className="w-6 h-6 text-lime-400" />
-								<div className="text-left">
-									<h3 className="font-semibold text-white">
-										College of Information Technology Education
-									</h3>
-									<p className="text-sm text-green-200">Department</p>
+							<div className="max-w-sm">
+								<div className="p-4 rounded-2xl border backdrop-blur-sm bg-white/5 border-white/10">
+									<div className="flex items-center mb-4 space-x-4">
+										<Users className="w-8 h-8 text-green-300" />
+										<div className="text-left">
+											<h3 className="text-lg font-semibold text-white">
+												College of Information Technology
+											</h3>
+											<p className="text-green-200">Department</p>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -182,50 +189,52 @@ export default function LoginPage() {
 				</div>
 
 				{/* Right Panel - Login Form */}
-				<div className="flex flex-1 justify-center items-center p-8">
+				<div className="flex flex-1 justify-center items-center p-6">
 					<div className="w-full max-w-md">
 						{/* Mobile Header */}
 						<div className="mb-8 text-center lg:hidden">
-							<div className="inline-flex justify-center items-center mb-4 w-16 h-16 rounded-xl border backdrop-blur-sm bg-white/10 border-white/20">
+							<div className="inline-flex justify-center items-center mb-6 w-20 h-20 bg-gradient-to-r from-green-600 to-emerald-700 rounded-2xl shadow-xl">
 								<img
 									src="/images/cocLogo.png"
 									alt="PHINMA Cagayan de Oro College Logo"
-									className="object-contain w-10 h-10"
+									className="object-contain w-12 h-12"
 								/>
 							</div>
-							<h1 className="mb-1 text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-lime-400">
+							<h1 className="mb-2 text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-700 via-emerald-700 to-green-800">
 								PHINMA
 							</h1>
-							<p className="text-sm text-white">Cagayan de Oro College</p>
+							<p className="text-green-600">Cagayan de Oro College</p>
 						</div>
 
 						{/* Login Card */}
-						<div className="p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
-							<div className="mb-8 text-center">
-								<h2 className="mb-2 text-2xl font-bold text-white">
+						<div className="p-10 bg-white rounded-3xl border border-green-100 shadow-2xl">
+							<div className="mb-10 text-center">
+								<h2 className="mb-3 text-3xl font-bold text-green-900">
 									Welcome Back
 								</h2>
-								<p className="text-green-200">Sign in to your account</p>
+								<p className="text-green-600 text-md">
+									Please sign in to your account
+								</p>
 							</div>
 
 							{/* Error Message */}
 							{error && (
-								<div className="flex items-start p-4 mb-6 space-x-3 rounded-xl border backdrop-blur-sm bg-green-900/30 border-green-500/20">
-									<AlertCircle className="w-5 h-5 text-lime-400 mt-0.5 flex-shrink-0" />
+								<div className="flex items-start p-5 mb-8 space-x-3 bg-red-50 rounded-2xl border border-red-200">
+									<AlertCircle className="w-6 h-6 text-red-500 mt-0.5 flex-shrink-0" />
 									<div>
-										<p className="text-sm font-medium text-green-300">
+										<p className="text-sm font-medium text-red-800">
 											Login Failed
 										</p>
-										<p className="text-sm text-green-200">{error}</p>
+										<p className="text-sm text-red-700">{error}</p>
 									</div>
 								</div>
 							)}
 
-							<form onSubmit={handleSubmit} className="space-y-6">
-								<div className="space-y-2">
+							<form onSubmit={handleSubmit} className="space-y-8">
+								<div className="space-y-3">
 									<Label
 										htmlFor="username"
-										className="text-sm font-medium text-green-200"
+										className="text-sm font-semibold text-green-800"
 									>
 										Username
 									</Label>
@@ -238,18 +247,18 @@ export default function LoginPage() {
 												setUsername(e.target.value);
 												setError("");
 											}}
-											placeholder=""
-											className="px-4 py-3 w-full placeholder-white text-white rounded-xl border backdrop-blur-sm transition-all duration-200 bg-white/10 border-white/20 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+											placeholder="Enter your username"
+											className="px-6 py-5 pl-14 w-full placeholder-green-400 text-green-900 rounded-2xl border-2 border-green-200 transition-all duration-200 text-md bg-green-50/50 focus:outline-none focus:ring-4 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
 											required
 										/>
-										<Mail className="absolute right-3 top-1/2 w-5 h-5 text-green-300 transform -translate-y-1/2" />
+										<Mail className="absolute left-5 top-1/2 w-5 h-5 text-green-500 transform -translate-y-1/2" />
 									</div>
 								</div>
 
-								<div className="space-y-2">
+								<div className="space-y-3">
 									<Label
 										htmlFor="password"
-										className="text-sm font-medium text-green-200"
+										className="text-sm font-semibold text-green-800"
 									>
 										Password
 									</Label>
@@ -262,14 +271,15 @@ export default function LoginPage() {
 												setPassword(e.target.value);
 												setError("");
 											}}
-											placeholder=""
-											className="px-4 py-3 w-full placeholder-white text-white rounded-xl border backdrop-blur-sm transition-all duration-200 bg-white/10 border-white/20 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+											placeholder="Enter your password"
+											className="px-6 py-5 pr-14 pl-14 w-full placeholder-green-400 text-green-900 rounded-2xl border-2 border-green-200 transition-all duration-200 text-md bg-green-50/50 focus:outline-none focus:ring-4 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
 											required
 										/>
+										<LockKeyhole className="absolute left-5 top-1/2 w-5 h-5 text-green-500 transform -translate-y-1/2" />
 										<button
 											type="button"
 											onClick={() => setShowPassword(!showPassword)}
-											className="absolute right-3 top-1/2 text-green-300 transition-colors transform -translate-y-1/2 hover:text-green-200"
+											className="absolute right-5 top-1/2 text-green-500 transition-colors transform -translate-y-1/2 hover:text-green-700"
 										>
 											{showPassword ? (
 												<EyeOff className="w-5 h-5" />
@@ -282,7 +292,7 @@ export default function LoginPage() {
 
 								{/* CAPTCHA Component */}
 								{showCaptcha && (
-									<div className="p-4 rounded-xl border backdrop-blur-sm bg-white/5 border-white/10">
+									<div className="p-6 rounded-2xl border-2 border-green-200 bg-green-50/30">
 										<Captcha
 											onVerify={handleCaptchaVerify}
 											error={captchaError}
@@ -292,42 +302,49 @@ export default function LoginPage() {
 
 								<Button
 									type="submit"
-									className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 ${
+									className={`w-full py-5 px-8 rounded-2xl font-semibold text-md transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-400/30 ${
 										showCaptcha && !captchaVerified
-											? "bg-gray-600 text-gray-300 cursor-not-allowed"
-											: "bg-gradient-to-r from-green-700 to-lime-700 text-white hover:from-green-800 hover:to-lime-800 shadow-lg hover:shadow-xl"
+											? "bg-green-300 text-green-600 cursor-not-allowed"
+											: "bg-gradient-to-r from-green-700 via-emerald-700 to-green-800 text-white hover:from-green-800 hover:via-emerald-800 hover:to-green-900 shadow-xl hover:shadow-2xl"
 									}`}
 									disabled={isLoading || (showCaptcha && !captchaVerified)}
 								>
 									{isLoading ? (
-										<div className="flex justify-center items-center space-x-2">
-											<div className="w-5 h-5 rounded-full border-2 border-white animate-spin border-t-transparent" />
+										<div className="flex justify-center items-center space-x-3">
+											<div className="w-6 h-6 rounded-full border-white animate-spin border-3 border-t-transparent" />
 											<span>Signing in...</span>
 										</div>
 									) : showCaptcha && !captchaVerified ? (
 										"Complete CAPTCHA to Continue"
 									) : showCaptcha && captchaVerified ? (
-										<div className="flex justify-center items-center space-x-2">
+										<div className="flex justify-center items-center space-x-3">
 											<span>Sign In</span>
-											<ArrowRight className="w-4 h-4" />
+											<ArrowRight className="w-5 h-5" />
 										</div>
 									) : (
-										<div className="flex justify-center items-center space-x-2">
+										<div className="flex justify-center items-center space-x-3">
 											<span>Sign In</span>
-											<ArrowRight className="w-4 h-4" />
+											<ArrowRight className="w-5 h-5" />
 										</div>
 									)}
 								</Button>
 							</form>
 
-							<div className="mt-6 text-center">
+							<div className="mt-10 text-center">
 								<a
 									href="#"
-									className="text-sm text-green-300 transition-colors hover:text-green-200"
+									className="font-medium text-green-600 transition-colors hover:text-green-800 hover:underline"
 								>
 									Forgot your password?
 								</a>
 							</div>
+						</div>
+
+						{/* Footer */}
+						<div className="mt-8 text-center">
+							<p className="text-sm text-green-600">
+								© 2024 PHINMA Cagayan de Oro College. All rights reserved.
+							</p>
 						</div>
 					</div>
 				</div>

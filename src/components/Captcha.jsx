@@ -32,15 +32,13 @@ export default function Captcha({ onVerify, error }) {
 		// Clear canvas
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-		// Background
-		ctx.fillStyle = "#f8f9fa";
+		// Background with green tint
+		ctx.fillStyle = "#f0f9ff";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-		// Add noise lines
+		// Add noise lines with green colors
 		for (let i = 0; i < 5; i++) {
-			ctx.strokeStyle = `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(
-				Math.random() * 255
-			)}, ${Math.floor(Math.random() * 255)}, 0.3)`;
+			ctx.strokeStyle = `rgba(34, 197, 94, ${Math.random() * 0.3 + 0.1})`;
 			ctx.lineWidth = 1;
 			ctx.beginPath();
 			ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
@@ -62,21 +60,21 @@ export default function Captcha({ onVerify, error }) {
 			ctx.save();
 			ctx.translate(x, y);
 			ctx.rotate(rotation);
-			ctx.font = `${fontSize}px Arial`;
-			ctx.fillStyle = `rgb(${Math.floor(Math.random() * 100)}, ${Math.floor(
-				Math.random() * 100
-			)}, ${Math.floor(Math.random() * 100)})`;
+			ctx.font = `bold ${fontSize}px Arial`;
+			// Green color variations
+			const greenShade = Math.floor(Math.random() * 100) + 50;
+			ctx.fillStyle = `rgb(${Math.floor(
+				greenShade * 0.3
+			)}, ${greenShade}, ${Math.floor(greenShade * 0.5)})`;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			ctx.fillText(char, 0, 0);
 			ctx.restore();
 		}
 
-		// Add noise dots
+		// Add noise dots with green tint
 		for (let i = 0; i < 50; i++) {
-			ctx.fillStyle = `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(
-				Math.random() * 255
-			)}, ${Math.floor(Math.random() * 255)}, 0.3)`;
+			ctx.fillStyle = `rgba(34, 197, 94, ${Math.random() * 0.3 + 0.1})`;
 			ctx.beginPath();
 			ctx.arc(
 				Math.random() * canvas.width,
@@ -119,19 +117,19 @@ export default function Captcha({ onVerify, error }) {
 	};
 
 	return (
-		<div className="space-y-3">
-			<Label className="text-sm font-medium text-gray-200">
+		<div className="space-y-4">
+			<Label className="text-sm font-semibold text-green-800">
 				CAPTCHA Verification
 			</Label>
 
 			{/* CAPTCHA Display */}
-			<div className="flex items-center space-x-3">
+			<div className="flex items-center space-x-4">
 				<div className="relative">
 					<canvas
 						ref={canvasRef}
-						width={180}
-						height={60}
-						className="bg-green-500 rounded border border-gray-300"
+						width={200}
+						height={70}
+						className="bg-white rounded-xl border-2 border-green-200 shadow-sm"
 					/>
 				</div>
 				<Button
@@ -139,27 +137,27 @@ export default function Captcha({ onVerify, error }) {
 					variant="outline"
 					size="sm"
 					onClick={handleRefresh}
-					className="p-2 w-10 h-10"
+					className="p-3 w-12 h-12 text-green-600 bg-green-50 rounded-xl border-2 border-green-200 transition-all duration-200 hover:bg-green-100 hover:text-green-700"
 					title="Refresh CAPTCHA"
 				>
-					<RefreshCw className="w-4 h-4" />
+					<RefreshCw className="w-5 h-5" />
 				</Button>
 			</div>
 
 			{/* Input Field */}
-			<div className="space-y-1">
+			<div className="space-y-2">
 				<Input
 					type="text"
 					value={userInput}
 					onChange={handleInputChange}
 					placeholder="Enter the characters shown above"
-					className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-green-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all duration-200"
+					className="px-6 py-4 w-full placeholder-green-400 text-green-900 rounded-2xl border-2 border-green-200 transition-all duration-200 bg-green-50/50 focus:outline-none focus:ring-4 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
 					maxLength={6}
 				/>
-				{error && <p className="text-sm text-red-600">{error}</p>}
+				{error && <p className="text-sm font-medium text-red-600">{error}</p>}
 			</div>
 
-			<p className="text-xs text-gray-500">
+			<p className="text-xs leading-relaxed text-green-600">
 				Enter the characters shown in the image above (case sensitive)
 			</p>
 		</div>

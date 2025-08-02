@@ -21,6 +21,26 @@ export default function ImageModal({
 	const [loading, setLoading] = useState(false);
 	const [commentText, setCommentText] = useState("");
 	const [submitting, setSubmitting] = useState(false);
+	const commentsEndRef = useRef(null);
+	const commentsContainerRef = useRef(null);
+
+	// Function to scroll to bottom
+	const scrollToBottom = () => {
+		if (commentsEndRef.current) {
+			commentsEndRef.current.scrollIntoView({
+				behavior: "smooth",
+				block: "end",
+			});
+		}
+	};
+
+	// Scroll to bottom when comments change (new comment added)
+	useEffect(() => {
+		if (comments.length > 0) {
+			// Small delay to ensure DOM is updated
+			setTimeout(scrollToBottom, 100);
+		}
+	}, [comments.length]);
 
 	// Fetch comments when selectedPost changes
 	useEffect(() => {
@@ -31,6 +51,10 @@ export default function ImageModal({
 					const result = await getComments(selectedPost.post_id);
 					if (result.success) {
 						setComments(result.comments);
+						// Scroll to bottom after comments are loaded
+						if (result.comments.length > 0) {
+							setTimeout(scrollToBottom, 200);
+						}
 					}
 				} catch (error) {
 					console.error("Error fetching comments:", error);
@@ -97,26 +121,6 @@ export default function ImageModal({
 							className="object-contain w-full max-w-full transition-transform duration-200"
 							style={{ transform: `scale(${zoomLevel})` }}
 						/>
-
-						{/* Close button */}
-						<button
-							onClick={onClose}
-							className="absolute top-4 right-4 z-10 p-2 text-white bg-black bg-opacity-50 rounded-full hover:bg-opacity-75"
-						>
-							<svg
-								className="w-6 h-6"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M6 18L18 6M6 6l12 12"
-								/>
-							</svg>
-						</button>
 
 						{/* Zoom controls */}
 						<div className="flex absolute top-4 left-4 z-10 gap-2">
@@ -267,43 +271,68 @@ export default function ImageModal({
 
 					{/* Header */}
 					<div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
-						<div className="flex items-center">
-							<img
-								src={
-									selectedPost.user_avatar ||
-									`https://ui-avatars.com/api/?name=${encodeURIComponent(
+						<div className="flex justify-between items-center">
+							<div className="flex items-center">
+								<img
+									src={
+										selectedPost.user_avatar ||
+										`https://ui-avatars.com/api/?name=${encodeURIComponent(
+											selectedPost.user_firstname +
+												" " +
+												selectedPost.user_lastname
+										)}`
+									}
+									alt={
 										selectedPost.user_firstname +
-											" " +
-											selectedPost.user_lastname
-									)}`
-								}
-								alt={
-									selectedPost.user_firstname + " " + selectedPost.user_lastname
-								}
-								className="mr-3 w-10 h-10 rounded-full"
-							/>
-							<div>
-								<span className="font-semibold text-gray-800 dark:text-gray-100">
-									{selectedPost.user_firstname +
 										" " +
-										selectedPost.user_lastname}
-								</span>
-								<div className="text-sm text-gray-500 dark:text-gray-400">
-									{new Date(selectedPost.post_createdAt).toLocaleString(
-										"en-PH",
-										{
-											timeZone: "Asia/Manila",
-											year: "numeric",
-											month: "long",
-											day: "numeric",
-											hour: "numeric",
-											minute: "2-digit",
-											hour12: true,
-										}
-									)}
+										selectedPost.user_lastname
+									}
+									className="mr-3 w-10 h-10 rounded-full"
+								/>
+								<div>
+									<span className="font-semibold text-gray-800 dark:text-gray-100">
+										{selectedPost.user_firstname +
+											" " +
+											selectedPost.user_lastname}
+									</span>
+									<div className="text-sm text-gray-500 dark:text-gray-400">
+										{new Date(selectedPost.post_createdAt).toLocaleString(
+											"en-PH",
+											{
+												timeZone: "Asia/Manila",
+												year: "numeric",
+												month: "long",
+												day: "numeric",
+												hour: "numeric",
+												minute: "2-digit",
+												hour12: true,
+											}
+										)}
+									</div>
 								</div>
 							</div>
+
+							{/* Close button next to user info */}
+							<button
+								onClick={onClose}
+								className="p-2 text-gray-600 bg-gray-100 rounded-full transition-colors hover:bg-gray-200 dark:text-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600"
+							>
+								<svg
+									className="w-5 h-5"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M6 18L18 6M6 6l12 12"
+									/>
+								</svg>
+							</button>
 						</div>
+
 						{/* Caption */}
 						{selectedPost.post_caption && (
 							<div className="mt-3">
@@ -315,7 +344,10 @@ export default function ImageModal({
 					</div>
 
 					{/* Comments Section */}
-					<div className="overflow-y-auto flex-1 min-h-0">
+					<div
+						ref={commentsContainerRef}
+						className="overflow-y-auto flex-1 min-h-0"
+					>
 						<div className="p-4">
 							<h3 className="mb-4 text-lg font-semibold text-gray-800 dark:text-gray-100">
 								Comments ({comments.length})
@@ -361,6 +393,8 @@ export default function ImageModal({
 											</div>
 										</div>
 									))}
+									{/* Invisible element to scroll to */}
+									<div ref={commentsEndRef} />
 								</div>
 							) : (
 								<div className="py-8 text-center text-gray-500 dark:text-gray-400">
@@ -384,7 +418,7 @@ export default function ImageModal({
 						</div>
 					</div>
 
-					{/* Footer - Comment input could go here */}
+					{/* Footer - Comment input */}
 					<div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700">
 						<form onSubmit={handleSubmitComment} className="flex items-center">
 							<input
@@ -398,21 +432,25 @@ export default function ImageModal({
 							<button
 								type="submit"
 								className="p-2 ml-2 text-blue-500 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/20"
-								disabled={submitting}
+								disabled={submitting || !commentText.trim()}
 							>
-								<svg
-									className="w-5 h-5"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth={2}
-										d="M14 5l7 7m0 0l-7 7m7-7H7"
-									/>
-								</svg>
+								{submitting ? (
+									<div className="w-5 h-5 rounded-full border-2 border-blue-500 animate-spin border-t-transparent"></div>
+								) : (
+									<svg
+										className="w-5 h-5"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M14 5l7 7m0 0l-7 7m7-7H7"
+										/>
+									</svg>
+								)}
 							</button>
 						</form>
 					</div>

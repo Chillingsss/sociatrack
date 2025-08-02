@@ -21,7 +21,7 @@ class User {
   {
     include "connection.php";
 
-    $sql = "SELECT a.post_id, a.post_caption, a.post_createdAt, b.user_firstname, b.user_lastname, b.user_avatar, 
+    $sql = "SELECT a.post_id, a.post_caption, a.post_createdAt, a.post_userId, b.user_firstname, b.user_lastname, b.user_avatar, 
             GROUP_CONCAT(c.postImage_fileName) as image_files,
             COUNT(DISTINCT r.react_id) as total_reactions,
             SUM(CASE WHEN r.react_type = 'like' THEN 1 ELSE 0 END) as like_count,
@@ -50,7 +50,7 @@ class User {
     $json = json_decode($json, true);
     $userId = $json['user_id'];
 
-    $sql = "SELECT a.post_id, a.post_caption, a.post_createdAt, b.user_firstname, b.user_lastname, b.user_avatar, 
+    $sql = "SELECT a.post_id, a.post_caption, a.post_createdAt, a.post_userId, b.user_firstname, b.user_lastname, b.user_avatar, 
             GROUP_CONCAT(c.postImage_fileName) as image_files,
             COUNT(DISTINCT r.react_id) as total_reactions,
             SUM(CASE WHEN r.react_type = 'like' THEN 1 ELSE 0 END) as like_count,
@@ -219,6 +219,71 @@ class User {
 
     return json_encode($groupedReactions);
   }
+
+  function updatePost($json)
+  {
+    include "connection.php";
+
+    $json = json_decode($json, true);
+    
+    try {
+      // First check if the user owns this post
+      $checkSql = "SELECT post_userId FROM tblpost WHERE post_id = :postId";
+      $checkStmt = $conn->prepare($checkSql);
+      $checkStmt->bindParam(':postId', $json['postId']);
+      $checkStmt->execute();
+      $post = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+      if (!$post) {
+        return json_encode(['success' => false, 'error' => 'Post not found']);
+      }
+
+      if ($post['post_userId'] != $json['userId']) {
+        return json_encode(['success' => false, 'error' => 'Unauthorized to edit this post']);
+      }
+
+      // Update the post caption
+      $updateSql = "UPDATE tblpost SET post_caption = :caption WHERE post_id = :postId";
+      $updateStmt = $conn->prepare($updateSql);
+      $updateStmt->bindParam(':caption', $json['caption']);
+      $updateStmt->bindParam(':postId', $json['postId']);
+      $updateStmt->execute();
+
+      return json_encode(['success' => true]);
+    } catch (Exception $e) {
+      return json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+  }
+
+  function getSinglePost($json)
+  {
+    include "connection.php";
+
+    $json = json_decode($json, true);
+    $postId = $json['postId'];
+
+    $sql = "SELECT a.post_id, a.post_caption, a.post_createdAt, a.post_userId, b.user_firstname, b.user_lastname, b.user_avatar, 
+            GROUP_CONCAT(c.postImage_fileName) as image_files,
+            COUNT(DISTINCT r.react_id) as total_reactions,
+            SUM(CASE WHEN r.react_type = 'like' THEN 1 ELSE 0 END) as like_count,
+            SUM(CASE WHEN r.react_type = 'love' THEN 1 ELSE 0 END) as love_count,
+            SUM(CASE WHEN r.react_type = 'haha' THEN 1 ELSE 0 END) as haha_count,
+            SUM(CASE WHEN r.react_type = 'sad' THEN 1 ELSE 0 END) as sad_count,
+            SUM(CASE WHEN r.react_type = 'angry' THEN 1 ELSE 0 END) as angry_count,
+            SUM(CASE WHEN r.react_type = 'wow' THEN 1 ELSE 0 END) as wow_count
+            FROM tblpost a 
+            LEFT JOIN tbluser b ON a.post_userId = b.user_id 
+            LEFT JOIN tblpost_images c ON a.post_id = c.postImage_postId 
+            LEFT JOIN tblreact r ON a.post_id = r.react_postId
+            WHERE a.post_id = :postId
+            GROUP BY a.post_id";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':postId', $postId);
+    $stmt->execute();
+
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return json_encode(['post' => $result]);
+  }
 }
 
 $operation = isset($_POST["operation"]) ? $_POST["operation"] : "0";
@@ -250,6 +315,12 @@ switch ($operation) {
     break;
   case "getReactionDetails":
     echo $user->getReactionDetails($json);
+    break;
+  case "updatePost":
+    echo $user->updatePost($json);
+    break;
+  case "getSinglePost":
+    echo $user->getSinglePost($json);
     break;
   default:
     echo json_encode("WALA KA NAGBUTANG OG OPERATION SA UBOS HAHAHHA BOBO");

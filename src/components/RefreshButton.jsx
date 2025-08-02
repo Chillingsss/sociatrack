@@ -4,7 +4,7 @@ export default function RefreshButton({ onRefresh, className = "" }) {
 	return (
 		<button
 			onClick={onRefresh}
-			className={`flex items-center p-2 bg-white rounded-lg shadow transition-colors duration-200 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 ${className}`}
+			className={`flex items-center p-2 transition-colors duration-200 ${className}`}
 			title="Refresh"
 		>
 			<svg

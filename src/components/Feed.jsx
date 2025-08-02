@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getDecryptedApiUrl } from "../utils/apiConfig";
-import { addReaction } from "../utils/faculty";
+import { addReaction, updatePost } from "../utils/faculty";
 import { getComments, formatTimeAgo } from "../utils/student";
 import axios from "axios";
 import ReactionDetailsModal from "./ReactionDetailsModal";
@@ -20,10 +20,20 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [showMobileReactions, setShowMobileReactions] = useState(null);
 	const [postComments, setPostComments] = useState({});
+	const [showDropdown, setShowDropdown] = useState(null);
+	const [editingPost, setEditingPost] = useState(null);
+	const [editCaption, setEditCaption] = useState("");
+	const [localPosts, setLocalPosts] = useState(posts || []);
 	const hoverTimeoutRef = useRef(null);
 	const reactionPopupRef = useRef(null);
 	const reactionDetailsRef = useRef(null);
 	const longPressTimeoutRef = useRef(null);
+	const dropdownRef = useRef(null);
+
+	// Update localPosts when posts prop changes
+	useEffect(() => {
+		setLocalPosts(posts || []);
+	}, [posts]);
 
 	const handleImageClick = (
 		imageUrl,
@@ -101,11 +111,8 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 	const handleReaction = async (postId, reactionType) => {
 		if (!userId) return;
 
-		console.log("Handling reaction:", { postId, reactionType, userId });
-
 		try {
 			const result = await addReaction(userId, postId, reactionType);
-			console.log("Reaction result:", result);
 
 			if (result.success) {
 				const previousReaction =
@@ -123,21 +130,6 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 				if (selectedPost && selectedPost.post_id === postId) {
 					setSelectedPost((prev) => {
 						const newPost = { ...prev };
-
-						console.log("Before update:", {
-							action: result.action,
-							previousReaction,
-							newReactionType: reactionType,
-							counts: {
-								like: newPost.like_count,
-								love: newPost.love_count,
-								haha: newPost.haha_count,
-								sad: newPost.sad_count,
-								angry: newPost.angry_count,
-								wow: newPost.wow_count,
-								total: newPost.total_reactions,
-							},
-						});
 
 						// Update user reaction
 						newPost.user_reaction =
@@ -184,19 +176,6 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 								// Total reactions stays the same when changing
 							}
 						}
-
-						console.log("After update:", {
-							counts: {
-								like: newPost.like_count,
-								love: newPost.love_count,
-								haha: newPost.haha_count,
-								sad: newPost.sad_count,
-								angry: newPost.angry_count,
-								wow: newPost.wow_count,
-								total: newPost.total_reactions,
-							},
-							user_reaction: newPost.user_reaction,
-						});
 
 						return newPost;
 					});
@@ -289,13 +268,8 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 	};
 
 	const handleReactionCountClick = (postId) => {
-		console.log("Reaction count clicked for post:", postId);
 		setModalPostId(postId);
 		setIsModalOpen(true);
-		console.log("Modal state set to:", {
-			modalPostId: postId,
-			isModalOpen: true,
-		});
 	};
 
 	const handleModalClose = () => {
@@ -683,8 +657,8 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 		const comments = postComments[post.post_id] || [];
 		if (comments.length === 0) return null;
 
-		// Always show only the first comment
-		const displayComments = comments.slice(0, 1);
+		// Show the newest comment (last in the array)
+		const displayComments = comments.slice(-1);
 		const hasMoreComments = comments.length > 1;
 
 		return (
@@ -734,10 +708,84 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 		fetchPostComments(postId, true);
 	};
 
+	// Handle dropdown menu
+	const handleDropdownToggle = (postId) => {
+		setShowDropdown(showDropdown === postId ? null : postId);
+
+		setShowDropdown(showDropdown === postId ? null : postId);
+	};
+
+	// Handle edit post with proper event handling
+	const handleEditPostClick = (post, event) => {
+		event.preventDefault();
+		event.stopPropagation();
+		// Set edit state first
+		setEditingPost(post.post_id);
+		setEditCaption(post.post_caption);
+
+		// Close dropdown after a small delay to ensure state is set
+		setTimeout(() => {
+			setShowDropdown(null);
+		}, 50);
+	};
+
+	// Handle save edit
+	const handleSaveEdit = async (postId) => {
+		try {
+			const result = await updatePost(userId, postId, editCaption);
+			if (result.success) {
+				// Update the local post data
+				setLocalPosts((prevPosts) =>
+					prevPosts.map((post) =>
+						post.post_id === postId
+							? { ...post, post_caption: editCaption }
+							: post
+					)
+				);
+				setEditingPost(null);
+				setEditCaption("");
+			} else {
+				console.error("Failed to update post:", result.error);
+				alert("Failed to update post. Please try again.");
+			}
+		} catch (error) {
+			console.error("Error updating post:", error);
+			alert("Error updating post. Please try again.");
+		}
+	};
+
+	// Handle cancel edit
+	const handleCancelEdit = () => {
+		setEditingPost(null);
+		setEditCaption("");
+	};
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setShowDropdown(null);
+			}
+		};
+
+		if (showDropdown) {
+			document.addEventListener("mousedown", handleClickOutside);
+			return () =>
+				document.removeEventListener("mousedown", handleClickOutside);
+		}
+	}, [showDropdown]);
+
+	// Check if user can edit the post (owner only)
+	const canEditPost = (post) => {
+		return (
+			post.post_userId && post.post_userId.toString() === userId?.toString()
+		);
+	};
+
 	return (
 		<>
 			<div className="flex flex-col gap-6">
-				{posts.map((post) => (
+				{localPosts.map((post) => (
 					<div
 						key={post.post_id}
 						className="p-5 bg-white rounded-2xl shadow dark:bg-gray-800"
@@ -753,7 +801,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 								alt={post.user_firstname + " " + post.user_lastname}
 								className="mr-3 w-10 h-10 rounded-full"
 							/>
-							<div>
+							<div className="flex-1">
 								<span className="font-semibold text-gray-800 dark:text-gray-100">
 									{post.user_firstname + " " + post.user_lastname}
 								</span>
@@ -769,10 +817,97 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 									})}
 								</div>
 							</div>
+
+							{/* 3-dots menu - only show for post owner */}
+							{(() => {
+								const canEdit = canEditPost(post);
+								return (
+									canEdit && (
+										<div className="relative" ref={dropdownRef}>
+											<button
+												onClick={() => handleDropdownToggle(post.post_id)}
+												className="p-2 text-gray-500 rounded-full transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+											>
+												<svg
+													className="w-5 h-5"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<path
+														strokeLinecap="round"
+														strokeLinejoin="round"
+														strokeWidth={2}
+														d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+													/>
+												</svg>
+											</button>
+
+											{/* Dropdown Menu */}
+											{showDropdown === post.post_id && (
+												<div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg py-1 z-50 min-w-[150px]">
+													<button
+														onClick={(e) => handleEditPostClick(post, e)}
+														onMouseDown={(e) => e.stopPropagation()}
+														className="flex items-center px-4 py-2 w-full text-sm text-gray-700 transition-colors dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+													>
+														<svg
+															className="mr-2 w-4 h-4"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																strokeWidth={2}
+																d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+															/>
+														</svg>
+														Edit post
+													</button>
+												</div>
+											)}
+										</div>
+									)
+								);
+							})()}
 						</div>
-						<p className="mb-2 text-gray-900 dark:text-gray-100">
-							{post.post_caption}
-						</p>
+
+						{/* Post Caption - Editable */}
+						{(() => {
+							return editingPost === post.post_id ? (
+								<div className="mb-2">
+									<textarea
+										value={editCaption}
+										onChange={(e) => setEditCaption(e.target.value)}
+										className="p-3 w-full text-gray-900 rounded-lg border border-gray-300 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-blue-400"
+										rows="3"
+										placeholder="What's on your mind?"
+										autoFocus
+									/>
+									<div className="flex justify-end mt-2 space-x-2">
+										<button
+											onClick={handleCancelEdit}
+											className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+										>
+											Cancel
+										</button>
+										<button
+											onClick={() => handleSaveEdit(post.post_id)}
+											className="px-4 py-2 text-sm text-white bg-blue-500 rounded-lg transition-colors hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+										>
+											Save
+										</button>
+									</div>
+								</div>
+							) : (
+								<p className="mb-2 text-gray-900 dark:text-gray-100">
+									{post.post_caption}
+								</p>
+							);
+						})()}
+
 						{post.image_files && renderImages(post.image_files, post)}
 
 						{/* Reaction Counts */}
@@ -843,7 +978,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 										ref={reactionPopupRef}
 										onMouseEnter={handleReactionPopupMouseEnter}
 										onMouseLeave={handleReactionPopupMouseLeave}
-										className="flex absolute left-0 bottom-full z-10 items-center p-1 mb-2 bg-white rounded-full border border-gray-200 shadow-lg dark:bg-gray-800 dark:border-gray-600"
+										className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-white rounded-full border border-gray-200 shadow-lg dark:bg-gray-800 dark:border-gray-600"
 									>
 										{/* Like */}
 										<button
@@ -851,10 +986,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "like");
 												setShowReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Like"
 										>
-											<span className="text-lg">👍</span>
+											<span className="text-2xl">👍</span>
 										</button>
 
 										{/* Love */}
@@ -863,10 +998,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "love");
 												setShowReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Love"
 										>
-											<span className="text-lg">❤️</span>
+											<span className="text-2xl">❤️</span>
 										</button>
 
 										{/* Haha */}
@@ -875,10 +1010,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "haha");
 												setShowReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Haha"
 										>
-											<span className="text-lg">😂</span>
+											<span className="text-2xl">😂</span>
 										</button>
 
 										{/* Sad */}
@@ -887,10 +1022,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "sad");
 												setShowReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Sad"
 										>
-											<span className="text-lg">😢</span>
+											<span className="text-2xl">😢</span>
 										</button>
 
 										{/* Angry */}
@@ -899,10 +1034,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "angry");
 												setShowReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Angry"
 										>
-											<span className="text-lg">😠</span>
+											<span className="text-2xl">😠</span>
 										</button>
 
 										{/* Wow */}
@@ -911,10 +1046,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "wow");
 												setShowReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Wow"
 										>
-											<span className="text-lg">😮</span>
+											<span className="text-2xl">😮</span>
 										</button>
 									</div>
 								)}
@@ -925,7 +1060,7 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 										ref={reactionPopupRef}
 										onMouseEnter={handleReactionPopupMouseEnter}
 										onMouseLeave={handleReactionPopupMouseLeave}
-										className="flex absolute left-0 bottom-full z-10 items-center p-1 mb-2 bg-white rounded-full border border-gray-200 shadow-lg reaction-popup dark:bg-gray-800 dark:border-gray-600"
+										className="flex absolute left-0 bottom-full z-10 items-center p-2 mb-2 bg-white rounded-full border border-gray-200 shadow-lg reaction-popup dark:bg-gray-800 dark:border-gray-600"
 									>
 										{/* Like */}
 										<button
@@ -933,10 +1068,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "like");
 												setShowMobileReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Like"
 										>
-											<span className="text-lg">👍</span>
+											<span className="text-2xl">👍</span>
 										</button>
 
 										{/* Love */}
@@ -945,10 +1080,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "love");
 												setShowMobileReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Love"
 										>
-											<span className="text-lg">❤️</span>
+											<span className="text-2xl">❤️</span>
 										</button>
 
 										{/* Haha */}
@@ -957,10 +1092,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "haha");
 												setShowMobileReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Haha"
 										>
-											<span className="text-lg">😂</span>
+											<span className="text-2xl">😂</span>
 										</button>
 
 										{/* Sad */}
@@ -969,10 +1104,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "sad");
 												setShowMobileReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Sad"
 										>
-											<span className="text-lg">😢</span>
+											<span className="text-2xl">😢</span>
 										</button>
 
 										{/* Angry */}
@@ -981,10 +1116,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "angry");
 												setShowMobileReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Angry"
 										>
-											<span className="text-lg">😠</span>
+											<span className="text-2xl">😠</span>
 										</button>
 
 										{/* Wow */}
@@ -993,10 +1128,10 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 												handleReaction(post.post_id, "wow");
 												setShowMobileReactions(null);
 											}}
-											className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+											className="flex justify-center items-center w-12 h-12 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
 											title="Wow"
 										>
-											<span className="text-lg">😮</span>
+											<span className="text-2xl">😮</span>
 										</button>
 									</div>
 								)}

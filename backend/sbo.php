@@ -329,9 +329,11 @@ class User {
     $json = json_decode($json, true);
     $sboId = $json['sboId'];
 
-    $sql = "SELECT a.*, s.user_firstname as student_firstname, s.user_lastname as student_lastname
+    $sql = "SELECT a.*, s.user_firstname as student_firstname, s.user_lastname as student_lastname,
+            sbo.user_firstname as sbo_firstname, sbo.user_lastname as sbo_lastname
             FROM tblattendance a
             INNER JOIN tbluser s ON a.attendance_studentId = s.user_id
+            LEFT JOIN tbluser sbo ON a.attendance_sboId = sbo.user_id
             WHERE DATE(a.attendance_timeIn) = CURDATE()
             ORDER BY a.attendance_timeIn DESC";
     $stmt = $conn->prepare($sql);
@@ -377,9 +379,11 @@ class User {
         // If already has time in but no time out, record time out
         if ($existingRecord['attendance_timeIn'] && !$existingRecord['attendance_timeOut']) {
           $updateSql = "UPDATE tblattendance 
-                        SET attendance_timeOut = NOW()
+                        SET attendance_timeOut = NOW(),
+                            attendance_sboId = :sboId
                         WHERE attendance_id = :attendanceId";
           $updateStmt = $conn->prepare($updateSql);
+          $updateStmt->bindParam(':sboId', $sboId);
           $updateStmt->bindParam(':attendanceId', $existingRecord['attendance_id']);
           $updateStmt->execute();
           
@@ -389,7 +393,7 @@ class User {
         }
       } else {
         // Record time in
-        $insertSql = "INSERT INTO tblattendance (attendance_facultyId, attendance_studentId, attendance_sessionId, attendance_timeIn)
+        $insertSql = "INSERT INTO tblattendance (attendance_sboId, attendance_studentId, attendance_sessionId, attendance_timeIn)
                       VALUES (:sboId, :studentId, :sessionId, NOW())";
         $insertStmt = $conn->prepare($insertSql);
         $insertStmt->bindParam(':sboId', $sboId);

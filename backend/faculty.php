@@ -336,14 +336,36 @@ class User {
     $json = json_decode($json, true);
     $facultyId = $json['facultyId'];
 
-    $sql = "SELECT a.*, s.user_firstname as student_firstname, s.user_lastname as student_lastname
+    // Set MySQL timezone to Philippines
+    $conn->exec("SET time_zone = '+08:00'");
+
+    // First get the faculty's tribe ID
+    $facultySql = "SELECT user_tribeId FROM tbluser WHERE user_id = :facultyId";
+    $facultyStmt = $conn->prepare($facultySql);
+    $facultyStmt->bindParam(':facultyId', $facultyId);
+    $facultyStmt->execute();
+    $facultyData = $facultyStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$facultyData) {
+      return json_encode([]);
+    }
+
+    // Get all attendance records for students in the faculty's tribe for today
+    $sql = "SELECT a.*, s.user_firstname as student_firstname, s.user_lastname as student_lastname,
+            COALESCE(sbo.user_firstname, faculty.user_firstname) as processor_firstname,
+            COALESCE(sbo.user_lastname, faculty.user_lastname) as processor_lastname,
+            COALESCE(sbo.user_userlevelId, faculty.user_userlevelId) as processor_userlevelId,
+            d.userL_name as processor_role
             FROM tblattendance a
-            INNER JOIN tbluser s ON a.attendance_studentId = s.user_id
+            LEFT JOIN tbluser s ON a.attendance_studentId = s.user_id
+            LEFT JOIN tbluser sbo ON a.attendance_sboId = sbo.user_id
+            LEFT JOIN tbluser faculty ON a.attendance_facultyId = faculty.user_id
+            LEFT JOIN tbluserlevel d ON COALESCE(sbo.user_userlevelId, faculty.user_userlevelId) = d.userL_id
             WHERE DATE(a.attendance_timeIn) = CURDATE()
-              AND a.attendance_facultyId = :facultyId
+              AND s.user_tribeId = :tribeId
             ORDER BY a.attendance_timeIn DESC";
     $stmt = $conn->prepare($sql);
-    $stmt->bindParam(':facultyId', $facultyId);
+    $stmt->bindParam(':tribeId', $facultyData['user_tribeId']);
     $stmt->execute();
 
     $result = $stmt->fetchAll(PDO::FETCH_ASSOC);

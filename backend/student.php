@@ -70,11 +70,16 @@
       // Set MySQL timezone to Philippines
       $conn->exec("SET time_zone = '+08:00'");
 
-      $sql = "SELECT a.*, b.attendanceS_name as session_name, c.user_firstname, c.user_lastname, d.userL_name
+      $sql = "SELECT a.*, b.attendanceS_name as session_name, 
+              COALESCE(sbo.user_firstname, faculty.user_firstname) as user_firstname,
+              COALESCE(sbo.user_lastname, faculty.user_lastname) as user_lastname,
+              COALESCE(sbo.user_userlevelId, faculty.user_userlevelId) as user_userlevelId,
+              d.userL_name
               FROM tblattendance a
               INNER JOIN tblattendancesession b ON a.attendance_sessionId = b.attendanceS_id
-              INNER JOIN tbluser c ON a.attendance_facultyId = c.user_id
-              INNER JOIN tbluserlevel d ON c.user_userlevelId = d.userL_id
+              LEFT JOIN tbluser sbo ON a.attendance_sboId = sbo.user_id
+              LEFT JOIN tbluser faculty ON a.attendance_facultyId = faculty.user_id
+              LEFT JOIN tbluserlevel d ON COALESCE(sbo.user_userlevelId, faculty.user_userlevelId) = d.userL_id
               WHERE a.attendance_studentId = :studentId
               ORDER BY a.attendance_timeIn DESC";
       $stmt = $conn->prepare($sql);

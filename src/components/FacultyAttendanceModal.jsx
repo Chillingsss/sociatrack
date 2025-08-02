@@ -18,6 +18,7 @@ import {
 	Search,
 	ChevronLeft,
 	ChevronRight,
+	Users,
 } from "lucide-react";
 import {
 	getStudentsInTribe,
@@ -41,9 +42,12 @@ const FacultyAttendanceModal = ({
 	const [loading, setLoading] = useState(false);
 	const [showScrollTop, setShowScrollTop] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedDate, setSelectedDate] = useState(
-		new Date().toISOString().split("T")[0]
-	); // Today's date in YYYY-MM-DD format
+	const [selectedDate, setSelectedDate] = useState(() => {
+		// Get current date in Philippines timezone (UTC+8)
+		const now = new Date();
+		const philippinesTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // Add 8 hours for UTC+8
+		return philippinesTime.toISOString().split("T")[0]; // Today's date in YYYY-MM-DD format
+	}); // Today's date in YYYY-MM-DD format
 	const [showCalendar, setShowCalendar] = useState(false);
 	const [calendarDate, setCalendarDate] = useState(new Date());
 	const videoRef = useRef(null);
@@ -127,6 +131,7 @@ const FacultyAttendanceModal = ({
 		try {
 			const result = await getTodayAttendance(facultyId);
 			if (result.success) {
+				console.log("Fetched attendance records:", result.records);
 				setAttendanceRecords(result.records);
 			} else {
 				console.warn("Failed to fetch today's attendance:", result);
@@ -609,9 +614,23 @@ const FacultyAttendanceModal = ({
 		return attendanceRecords.filter((record) => {
 			if (!record.attendance_timeIn) return false;
 
-			// Extract date from attendance_timeIn (format: YYYY-MM-DD HH:MM:SS)
-			const recordDate = record.attendance_timeIn.split(" ")[0]; // Get YYYY-MM-DD part
-			return recordDate === selectedDate;
+			// Convert the database datetime to Philippines date for comparison
+			const recordDate = new Date(record.attendance_timeIn);
+			// Add 8 hours to convert to Philippines timezone (UTC+8)
+			const philippinesDate = new Date(
+				recordDate.getTime() + 8 * 60 * 60 * 1000
+			);
+			const recordDateString = philippinesDate.toISOString().split("T")[0]; // Get YYYY-MM-DD part
+
+			// Debug logging
+			console.log("Date comparison:", {
+				recordDate: record.attendance_timeIn,
+				recordDateString,
+				selectedDate,
+				matches: recordDateString === selectedDate,
+			});
+
+			return recordDateString === selectedDate;
 		});
 	};
 
@@ -619,11 +638,25 @@ const FacultyAttendanceModal = ({
 	const getStudentAttendanceStatusForDate = (studentId) => {
 		if (!selectedSession) return "No Session";
 
+		console.log("Selected session:", selectedSession);
+		console.log("All attendance records:", attendanceRecords);
+
 		const filteredRecords = getFilteredAttendanceByDate();
+		console.log("Filtered records for date:", selectedDate, filteredRecords);
+
 		const record = filteredRecords.find(
 			(r) =>
 				r.attendance_studentId === studentId &&
 				r.attendance_sessionId === selectedSession.attendanceS_id
+		);
+
+		console.log(
+			"Looking for student:",
+			studentId,
+			"session:",
+			selectedSession.attendanceS_id,
+			"found record:",
+			record
 		);
 
 		if (!record) return "No record";
@@ -857,17 +890,36 @@ const FacultyAttendanceModal = ({
 											type="date"
 											value={selectedDate}
 											onChange={(e) => setSelectedDate(e.target.value)}
-											max={new Date().toISOString().split("T")[0]} // Prevent future dates
+											max={(() => {
+												// Get current date in Philippines timezone (UTC+8)
+												const now = new Date();
+												const philippinesTime = new Date(
+													now.getTime() + 8 * 60 * 60 * 1000
+												);
+												return philippinesTime.toISOString().split("T")[0];
+											})()} // Prevent future dates
 											className="px-3 py-2 text-sm bg-white rounded-lg border border-gray-300 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-blue-400"
 										/>
 										{selectedDate !==
-											new Date().toISOString().split("T")[0] && (
+											(() => {
+												// Get current date in Philippines timezone (UTC+8)
+												const now = new Date();
+												const philippinesTime = new Date(
+													now.getTime() + 8 * 60 * 60 * 1000
+												);
+												return philippinesTime.toISOString().split("T")[0];
+											})() && (
 											<button
-												onClick={() =>
+												onClick={() => {
+													// Get current date in Philippines timezone (UTC+8)
+													const now = new Date();
+													const philippinesTime = new Date(
+														now.getTime() + 8 * 60 * 60 * 1000
+													);
 													setSelectedDate(
-														new Date().toISOString().split("T")[0]
-													)
-												}
+														philippinesTime.toISOString().split("T")[0]
+													);
+												}}
 												className="text-sm text-blue-600 whitespace-nowrap hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
 											>
 												Back to Today
@@ -1060,6 +1112,26 @@ const FacultyAttendanceModal = ({
 																				</span>
 																			</div>
 																		</div>
+																		{/* Processor Information */}
+																		{record.processor_firstname &&
+																			record.processor_lastname && (
+																				<div className="flex gap-2 items-center text-gray-600 dark:text-gray-300">
+																					<Users className="mr-1 w-4 h-4 text-blue-600 dark:text-blue-400" />
+																					<span className="font-medium">
+																						Processed by:
+																					</span>
+																					<span>
+																						{record.processor_firstname}{" "}
+																						{record.processor_lastname}
+																						{record.processor_role && (
+																							<span className="text-gray-500 dark:text-gray-400">
+																								{" "}
+																								({record.processor_role})
+																							</span>
+																						)}
+																					</span>
+																				</div>
+																			)}
 																	</div>
 																</div>
 															)}

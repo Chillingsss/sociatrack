@@ -40,9 +40,12 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 	const [loading, setLoading] = useState(false);
 	const [showScrollTop, setShowScrollTop] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedDate, setSelectedDate] = useState(
-		new Date().toISOString().split("T")[0]
-	);
+	const [selectedDate, setSelectedDate] = useState(() => {
+		// Get current date in Philippines timezone (UTC+8)
+		const now = new Date();
+		const philippinesTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // Add 8 hours for UTC+8
+		return philippinesTime.toISOString().split("T")[0]; // Today's date in YYYY-MM-DD format
+	});
 	const videoRef = useRef(null);
 	const codeReader = useRef(null);
 	const scrollContainerRef = useRef(null);
@@ -501,6 +504,106 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 		return "Absent";
 	};
 
+	// Function to filter attendance records by selected date
+	const getFilteredAttendanceByDate = () => {
+		if (!Array.isArray(attendanceRecords)) {
+			return [];
+		}
+
+		return attendanceRecords.filter((record) => {
+			if (!record.attendance_timeIn) return false;
+
+			// Convert the database datetime to Philippines date for comparison
+			const recordDate = new Date(record.attendance_timeIn);
+			// Add 8 hours to convert to Philippines timezone (UTC+8)
+			const philippinesDate = new Date(
+				recordDate.getTime() + 8 * 60 * 60 * 1000
+			);
+			const recordDateString = philippinesDate.toISOString().split("T")[0]; // Get YYYY-MM-DD part
+
+			return recordDateString === selectedDate;
+		});
+	};
+
+	// Function to get student attendance status for selected date
+	const getStudentAttendanceStatusForDate = (studentId) => {
+		if (!selectedSession) return "No Session";
+
+		const filteredRecords = getFilteredAttendanceByDate();
+		const record = filteredRecords.find(
+			(r) =>
+				r.attendance_studentId === studentId &&
+				parseInt(r.attendance_sessionId) ===
+					parseInt(selectedSession.attendanceS_id)
+		);
+
+		if (!record) return "No record";
+		if (record.attendance_timeIn && !record.attendance_timeOut)
+			return "Time In";
+		if (record.attendance_timeIn && record.attendance_timeOut)
+			return "Completed";
+		return "Absent";
+	};
+
+	// Function to sort students by newest attendance first for selected date
+	const sortStudentsByNewestAttendanceForDate = (students) => {
+		if (!selectedSession) {
+			return students;
+		}
+
+		const filteredRecords = getFilteredAttendanceByDate();
+
+		return [...students].sort((a, b) => {
+			// Get attendance records for both students in the selected session and date
+			const recordA = filteredRecords.find(
+				(r) =>
+					r.attendance_studentId === a.user_id &&
+					r.attendance_sessionId === selectedSession.attendanceS_id
+			);
+			const recordB = filteredRecords.find(
+				(r) =>
+					r.attendance_studentId === b.user_id &&
+					r.attendance_sessionId === selectedSession.attendanceS_id
+			);
+
+			// Get attendance status for both students
+			const statusA = getStudentAttendanceStatusForDate(a.user_id);
+			const statusB = getStudentAttendanceStatusForDate(b.user_id);
+
+			// Priority order: Completed > Time In > No record
+			const priorityOrder = {
+				Completed: 3,
+				"Time In": 2,
+				"No record": 1,
+				Absent: 0,
+			};
+
+			// First, sort by attendance status priority
+			const priorityA = priorityOrder[statusA] || 0;
+			const priorityB = priorityOrder[statusB] || 0;
+
+			if (priorityA !== priorityB) {
+				return priorityB - priorityA; // Higher priority first
+			}
+
+			// If both have the same status, sort by newest time_in
+			if (recordA && recordB) {
+				const timeA = new Date(recordA.attendance_timeIn).getTime();
+				const timeB = new Date(recordB.attendance_timeIn).getTime();
+				return timeB - timeA; // Newest first
+			}
+
+			// If only one has a record, prioritize the one with attendance
+			if (recordA && !recordB) return -1;
+			if (!recordA && recordB) return 1;
+
+			// If neither has records, maintain original order (alphabetical by name)
+			const nameA = `${a.user_firstname} ${a.user_lastname}`.toLowerCase();
+			const nameB = `${b.user_firstname} ${b.user_lastname}`.toLowerCase();
+			return nameA.localeCompare(nameB);
+		});
+	};
+
 	const filterStudents = (students) => {
 		if (!searchQuery.trim()) {
 			return students;
@@ -674,8 +777,56 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 						{/* Students List - Always show when tribe and session are selected */}
 						{selectedTribe && selectedSession && (
 							<div className="p-3 sm:p-4 md:p-6">
-								{/* Search Input */}
-								<div className="mb-4">
+								{/* Date and Search Filters */}
+								<div className="mb-4 space-y-3">
+									{/* Date Picker */}
+									<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+										<label className="flex gap-2 items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+											<Calendar className="w-4 h-4" />
+											Select Date:
+										</label>
+										<input
+											type="date"
+											value={selectedDate}
+											onChange={(e) => setSelectedDate(e.target.value)}
+											max={(() => {
+												// Get current date in Philippines timezone (UTC+8)
+												const now = new Date();
+												const philippinesTime = new Date(
+													now.getTime() + 8 * 60 * 60 * 1000
+												);
+												return philippinesTime.toISOString().split("T")[0];
+											})()} // Prevent future dates
+											className="px-3 py-2 text-sm bg-white rounded-lg border border-gray-300 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-blue-400"
+										/>
+										{selectedDate !==
+											(() => {
+												// Get current date in Philippines timezone (UTC+8)
+												const now = new Date();
+												const philippinesTime = new Date(
+													now.getTime() + 8 * 60 * 60 * 1000
+												);
+												return philippinesTime.toISOString().split("T")[0];
+											})() && (
+											<button
+												onClick={() => {
+													// Get current date in Philippines timezone (UTC+8)
+													const now = new Date();
+													const philippinesTime = new Date(
+														now.getTime() + 8 * 60 * 60 * 1000
+													);
+													setSelectedDate(
+														philippinesTime.toISOString().split("T")[0]
+													);
+												}}
+												className="text-sm text-blue-600 whitespace-nowrap hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+											>
+												Back to Today
+											</button>
+										)}
+									</div>
+
+									{/* Search Input */}
 									<div className="relative">
 										<div className="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
 											<Search className="w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -726,6 +877,14 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 													? "Active"
 													: "Inactive"}
 											</span>
+											<span className="text-gray-400">•</span>
+											<span className="font-medium text-gray-700 dark:text-gray-300">
+												{new Date(selectedDate).toLocaleDateString("en-US", {
+													month: "short",
+													day: "numeric",
+													year: "numeric",
+												})}
+											</span>
 										</div>
 									</div>
 								</div>
@@ -749,11 +908,14 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 									</div>
 								) : (
 									<div className="space-y-3">
-										{filterStudents(students).map((student) => {
-											const status = getStudentAttendanceStatus(
+										{sortStudentsByNewestAttendanceForDate(
+											filterStudents(students)
+										).map((student) => {
+											const status = getStudentAttendanceStatusForDate(
 												student.user_id
 											);
-											const record = attendanceRecords.find(
+											const filteredRecords = getFilteredAttendanceByDate();
+											const record = filteredRecords.find(
 												(r) =>
 													r.attendance_studentId === student.user_id &&
 													parseInt(r.attendance_sessionId) ===
@@ -854,6 +1016,20 @@ const SboAttendanceModal = ({ isOpen, onClose, sboId, sboProfile }) => {
 																				</span>
 																			</div>
 																		</div>
+																		{/* SBO Information */}
+																		{record.sbo_firstname &&
+																			record.sbo_lastname && (
+																				<div className="flex gap-2 items-center text-gray-600 dark:text-gray-300">
+																					<Users className="mr-1 w-4 h-4 text-blue-600 dark:text-blue-400" />
+																					<span className="font-medium">
+																						Processed by:
+																					</span>
+																					<span>
+																						{record.sbo_firstname}{" "}
+																						{record.sbo_lastname}
+																					</span>
+																				</div>
+																			)}
 																	</div>
 																</div>
 															)}

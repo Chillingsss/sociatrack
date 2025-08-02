@@ -284,6 +284,134 @@ class User {
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     return json_encode(['post' => $result]);
   }
+
+  function getStudentsInTribe($json)
+  {
+    include "connection.php";
+
+    $json = json_decode($json, true);
+    $facultyId = $json['facultyId'];
+
+    // Get faculty's tribe ID first
+    $facultySql = "SELECT user_tribeId FROM tbluser WHERE user_id = :facultyId";
+    $facultyStmt = $conn->prepare($facultySql);
+    $facultyStmt->bindParam(':facultyId', $facultyId);
+    $facultyStmt->execute();
+    $facultyData = $facultyStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$facultyData) {
+      return json_encode([]);
+    }
+
+    // Get students in the same tribe
+    $sql = "SELECT s.user_id, s.user_firstname, s.user_lastname, s.user_avatar, t.tribe_name
+            FROM tbluser s
+            INNER JOIN tbltribe t ON s.user_tribeId = t.tribe_id
+            WHERE s.user_tribeId = :tribeId
+              AND s.user_userlevelId = 3"; // Assuming 3 is student level
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':tribeId', $facultyData['user_tribeId']);
+    $stmt->execute();
+
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return json_encode($result);
+  }
+
+  function getAttendanceSessions()
+  {
+    include "connection.php";
+
+    $sql = "SELECT attendanceS_id, attendanceS_name, attendanceS_status FROM tblattendancesession ORDER BY attendanceS_id";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return json_encode($result);
+  }
+
+  function getTodayAttendance($json)
+  {
+    include "connection.php";
+
+    $json = json_decode($json, true);
+    $facultyId = $json['facultyId'];
+
+    $sql = "SELECT a.*, s.user_firstname as student_firstname, s.user_lastname as student_lastname
+            FROM tblattendance a
+            INNER JOIN tbluser s ON a.attendance_studentId = s.user_id
+            WHERE DATE(a.attendance_timeIn) = CURDATE()
+              AND a.attendance_facultyId = :facultyId
+            ORDER BY a.attendance_timeIn DESC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':facultyId', $facultyId);
+    $stmt->execute();
+
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return json_encode($result);
+  }
+
+  function processAttendance($json)
+  {
+    include "connection.php";
+
+    $json = json_decode($json, true);
+    $facultyId = $json['facultyId'];
+    $studentId = $json['studentId'];
+    $sessionId = $json['sessionId'];
+
+    try {
+      // Check if session is active
+      $sessionSql = "SELECT attendanceS_status FROM tblattendancesession WHERE attendanceS_id = :sessionId";
+      $sessionStmt = $conn->prepare($sessionSql);
+      $sessionStmt->bindParam(':sessionId', $sessionId);
+      $sessionStmt->execute();
+      $session = $sessionStmt->fetch(PDO::FETCH_ASSOC);
+
+      if (!$session || $session['attendanceS_status'] == 0) {
+        return json_encode(['success' => false, 'message' => 'Session is inactive']);
+      }
+
+      // Check if student already has a record for today and this session
+      $checkSql = "SELECT * FROM tblattendance 
+                   WHERE attendance_studentId = :studentId 
+                     AND attendance_sessionId = :sessionId 
+                     AND DATE(attendance_timeIn) = CURDATE()";
+      $checkStmt = $conn->prepare($checkSql);
+      $checkStmt->bindParam(':studentId', $studentId);
+      $checkStmt->bindParam(':sessionId', $sessionId);
+      $checkStmt->execute();
+      $existingRecord = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+      if ($existingRecord) {
+        // If already has time in but no time out, record time out
+        if ($existingRecord['attendance_timeIn'] && !$existingRecord['attendance_timeOut']) {
+          $updateSql = "UPDATE tblattendance 
+                        SET attendance_timeOut = NOW() 
+                        WHERE attendance_id = :attendanceId";
+          $updateStmt = $conn->prepare($updateSql);
+          $updateStmt->bindParam(':attendanceId', $existingRecord['attendance_id']);
+          $updateStmt->execute();
+          
+          return json_encode(['success' => true, 'action' => 'time_out', 'message' => 'Time out recorded']);
+        } else {
+          return json_encode(['success' => false, 'message' => 'Student already completed attendance for this session']);
+        }
+      } else {
+        // Record time in
+        $insertSql = "INSERT INTO tblattendance (attendance_facultyId, attendance_studentId, attendance_sessionId, attendance_timeIn)
+                      VALUES (:facultyId, :studentId, :sessionId, NOW())";
+        $insertStmt = $conn->prepare($insertSql);
+        $insertStmt->bindParam(':facultyId', $facultyId);
+        $insertStmt->bindParam(':studentId', $studentId);
+        $insertStmt->bindParam(':sessionId', $sessionId);
+        $insertStmt->execute();
+
+        return json_encode(['success' => true, 'action' => 'time_in', 'message' => 'Time in recorded']);
+      }
+    } catch (Exception $e) {
+      return json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+  }
 }
 
 $operation = isset($_POST["operation"]) ? $_POST["operation"] : "0";
@@ -321,6 +449,18 @@ switch ($operation) {
     break;
   case "getSinglePost":
     echo $user->getSinglePost($json);
+    break;
+  case "getStudentsInTribe":
+    echo $user->getStudentsInTribe($json);
+    break;
+  case "getAttendanceSessions":
+    echo $user->getAttendanceSessions();
+    break;
+  case "getTodayAttendance":
+    echo $user->getTodayAttendance($json);
+    break;
+  case "processAttendance":
+    echo $user->processAttendance($json);
     break;
   default:
     echo json_encode("WALA KA NAGBUTANG OG OPERATION SA UBOS HAHAHHA BOBO");

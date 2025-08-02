@@ -36,9 +36,9 @@ export default function Captcha({ onVerify, error }) {
 		ctx.fillStyle = "#f0f9ff";
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-		// Add noise lines with green colors
-		for (let i = 0; i < 5; i++) {
-			ctx.strokeStyle = `rgba(34, 197, 94, ${Math.random() * 0.3 + 0.1})`;
+		// Add minimal noise lines with green colors
+		for (let i = 0; i < 2; i++) {
+			ctx.strokeStyle = `rgba(34, 197, 94, ${Math.random() * 0.2 + 0.1})`;
 			ctx.lineWidth = 1;
 			ctx.beginPath();
 			ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
@@ -53,16 +53,16 @@ export default function Captcha({ onVerify, error }) {
 			const x = charWidth * i + charWidth / 2;
 			const y = canvas.height / 2;
 
-			// Random font size and rotation
-			const fontSize = 20 + Math.random() * 10;
-			const rotation = (Math.random() - 0.5) * 0.4;
+			// Smaller font size and minimal rotation for compact display
+			const fontSize = 14 + Math.random() * 4;
+			const rotation = (Math.random() - 0.5) * 0.2;
 
 			ctx.save();
 			ctx.translate(x, y);
 			ctx.rotate(rotation);
 			ctx.font = `bold ${fontSize}px Arial`;
 			// Green color variations
-			const greenShade = Math.floor(Math.random() * 100) + 50;
+			const greenShade = Math.floor(Math.random() * 80) + 60;
 			ctx.fillStyle = `rgb(${Math.floor(
 				greenShade * 0.3
 			)}, ${greenShade}, ${Math.floor(greenShade * 0.5)})`;
@@ -72,14 +72,14 @@ export default function Captcha({ onVerify, error }) {
 			ctx.restore();
 		}
 
-		// Add noise dots with green tint
-		for (let i = 0; i < 50; i++) {
-			ctx.fillStyle = `rgba(34, 197, 94, ${Math.random() * 0.3 + 0.1})`;
+		// Add minimal noise dots with green tint
+		for (let i = 0; i < 20; i++) {
+			ctx.fillStyle = `rgba(34, 197, 94, ${Math.random() * 0.2 + 0.1})`;
 			ctx.beginPath();
 			ctx.arc(
 				Math.random() * canvas.width,
 				Math.random() * canvas.height,
-				1,
+				0.5,
 				0,
 				2 * Math.PI
 			);
@@ -117,31 +117,34 @@ export default function Captcha({ onVerify, error }) {
 	};
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-3 w-full">
 			<Label className="text-sm font-semibold text-green-800">
 				CAPTCHA Verification
 			</Label>
 
-			{/* CAPTCHA Display */}
-			<div className="flex items-center space-x-4">
-				<div className="relative">
+			{/* CAPTCHA Display - Compact Layout */}
+			<div className="flex flex-col space-y-3">
+				<div className="flex justify-center items-center">
 					<canvas
 						ref={canvasRef}
-						width={200}
-						height={70}
-						className="bg-white rounded-xl border-2 border-green-200 shadow-sm"
+						width={140}
+						height={45}
+						className="bg-white rounded-lg border-2 border-green-200 shadow-sm"
+						style={{ width: "140px", height: "45px" }}
 					/>
 				</div>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={handleRefresh}
-					className="p-3 w-12 h-12 text-green-600 bg-green-50 rounded-xl border-2 border-green-200 transition-all duration-200 hover:bg-green-100 hover:text-green-700"
-					title="Refresh CAPTCHA"
-				>
-					<RefreshCw className="w-5 h-5" />
-				</Button>
+				<div className="flex justify-center">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={handleRefresh}
+						className="p-2 w-8 h-8 text-green-600 bg-green-50 rounded-lg border-2 border-green-200 transition-all duration-200 hover:bg-green-100 hover:text-green-700"
+						title="Refresh CAPTCHA"
+					>
+						<RefreshCw className="w-3 h-3" />
+					</Button>
+				</div>
 			</div>
 
 			{/* Input Field */}
@@ -151,13 +154,13 @@ export default function Captcha({ onVerify, error }) {
 					value={userInput}
 					onChange={handleInputChange}
 					placeholder="Enter the characters shown above"
-					className="px-6 py-4 w-full placeholder-green-400 text-green-900 rounded-2xl border-2 border-green-200 transition-all duration-200 bg-green-50/50 focus:outline-none focus:ring-4 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
+					className="px-3 py-2 w-full text-sm placeholder-green-400 text-green-900 rounded-lg border-2 border-green-200 transition-all duration-200 bg-green-50/50 focus:outline-none focus:ring-2 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
 					maxLength={6}
 				/>
-				{error && <p className="text-sm font-medium text-red-600">{error}</p>}
+				{error && <p className="text-xs font-medium text-red-600">{error}</p>}
 			</div>
 
-			<p className="text-xs leading-relaxed text-green-600">
+			<p className="text-xs leading-relaxed text-center text-green-600">
 				Enter the characters shown in the image above (case sensitive)
 			</p>
 		</div>

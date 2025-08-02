@@ -2,25 +2,22 @@ import React, { useState, useEffect, useRef } from "react";
 import {
 	getProfile,
 	getPostsWithUserReactions,
-	createPost,
 	getPosts,
 } from "../../utils/faculty";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import CryptoJS from "crypto-js";
-import { getDecryptedApiUrl } from "../../utils/apiConfig";
 import Feed from "../../components/Feed";
 import AvatarDropdown from "../../components/AvatarDropdown";
 import RefreshButton from "../../components/RefreshButton";
+import PostCreation from "../../components/PostCreation";
+import QRCodeModal from "../../components/QRCodeModal";
 
 export default function StudentDashboard() {
-	const [caption, setCaption] = useState("");
-	const [selectedImages, setSelectedImages] = useState([]);
-	const [imagePreviews, setImagePreviews] = useState([]);
 	const [posts, setPosts] = useState([]);
 	const [profile, setProfile] = useState(null);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-	const [isPosting, setIsPosting] = useState(false);
+	const [qrModalOpen, setQrModalOpen] = useState(false);
 	const mobileMenuRef = useRef(null);
 	const navigate = useNavigate();
 
@@ -100,45 +97,6 @@ export default function StudentDashboard() {
 		}
 	}, [mobileMenuOpen]);
 
-	const handleImageChange = (e) => {
-		if (e.target.files && e.target.files.length > 0) {
-			const newFiles = Array.from(e.target.files);
-			const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
-
-			setSelectedImages([...selectedImages, ...newFiles]);
-			setImagePreviews([...imagePreviews, ...newPreviews]);
-		}
-	};
-
-	const removeImage = (index) => {
-		const newSelectedImages = selectedImages.filter((_, i) => i !== index);
-		const newImagePreviews = imagePreviews.filter((_, i) => i !== index);
-
-		setSelectedImages(newSelectedImages);
-		setImagePreviews(newImagePreviews);
-	};
-
-	const handlePost = (e) => {
-		e.preventDefault();
-		if (!caption && !selectedImages.length) return;
-		setIsPosting(true);
-		createPost(userId, caption, selectedImages)
-			.then((result) => {
-				console.log("New post created:", result);
-				// Refresh posts after creating new post
-				fetchPosts();
-				setCaption("");
-				setSelectedImages([]);
-				setImagePreviews([]);
-			})
-			.catch((error) => {
-				console.error("Error creating post:", error);
-			})
-			.finally(() => {
-				setIsPosting(false);
-			});
-	};
-
 	const handleLogout = () => {
 		// Clear all cookies
 		Object.keys(
@@ -170,6 +128,11 @@ export default function StudentDashboard() {
 					setProfile(null);
 				});
 		}
+	};
+
+	const handleAttendanceClick = () => {
+		setQrModalOpen(true);
+		setMobileMenuOpen(false); // Close mobile menu if open
 	};
 
 	return (
@@ -267,7 +230,10 @@ export default function StudentDashboard() {
 						</button>
 					</div>
 					<div className="p-4 space-y-3">
-						<button className="px-4 py-3 w-full font-semibold text-white bg-green-600 rounded-lg transition-colors duration-200 hover:bg-green-700">
+						<button
+							onClick={handleAttendanceClick}
+							className="px-4 py-3 w-full font-semibold text-white bg-green-600 rounded-lg transition-colors duration-200 hover:bg-green-700"
+						>
 							Attendance
 						</button>
 						<button className="px-4 py-3 w-full font-semibold text-white bg-blue-600 rounded-lg transition-colors duration-200 hover:bg-blue-700">
@@ -283,7 +249,10 @@ export default function StudentDashboard() {
 					<h2 className="mb-4 text-xl font-bold text-gray-700 dark:text-gray-200">
 						Menu
 					</h2>
-					<button className="py-2 mb-2 w-full font-semibold text-white bg-green-600 rounded-lg transition hover:bg-green-700">
+					<button
+						onClick={handleAttendanceClick}
+						className="py-2 mb-2 w-full font-semibold text-white bg-green-600 rounded-lg transition hover:bg-green-700"
+					>
 						Attendance
 					</button>
 					<button className="py-2 w-full font-semibold text-white bg-blue-600 rounded-lg transition hover:bg-blue-700">
@@ -294,67 +263,11 @@ export default function StudentDashboard() {
 				{/* Main Feed */}
 				<main className="flex-1 mx-auto max-w-2xl">
 					{/* Post Creation */}
-					<div className="p-6 mb-6 bg-white rounded-2xl shadow dark:bg-gray-800">
-						<form onSubmit={handlePost} className="flex flex-col gap-4">
-							<textarea
-								className="p-3 w-full text-gray-900 bg-gray-50 rounded-lg border border-gray-300 resize-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-								placeholder="What's on your mind?"
-								value={caption}
-								onChange={(e) => setCaption(e.target.value)}
-								rows={2}
-							/>
-							<div className="flex gap-3 items-center">
-								<label className="font-semibold text-blue-600 cursor-pointer dark:text-blue-400">
-									<input
-										type="file"
-										accept="image/*"
-										className="hidden"
-										onChange={handleImageChange}
-										multiple
-									/>
-									Upload Image
-								</label>
-								<div className="flex flex-wrap gap-2">
-									{imagePreviews.map((preview, index) => (
-										<div key={index} className="relative group">
-											<img
-												src={preview}
-												alt={`Preview ${index + 1}`}
-												className="object-cover w-12 h-12 rounded-lg border"
-											/>
-											<button
-												type="button"
-												onClick={() => removeImage(index)}
-												className="absolute top-0 right-0 p-1 text-white bg-red-500 rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-												title="Remove image"
-											>
-												<svg
-													className="w-4 h-4"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-												>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M6 18L18 6M6 6l12 12"
-													/>
-												</svg>
-											</button>
-										</div>
-									))}
-								</div>
-								<button
-									type="submit"
-									className="px-4 py-2 ml-auto font-semibold text-white bg-green-600 rounded-lg transition hover:bg-green-700"
-									disabled={isPosting}
-								>
-									{isPosting ? "Posting..." : "Post"}
-								</button>
-							</div>
-						</form>
-					</div>
+					<PostCreation
+						userId={userId}
+						onPostCreated={fetchPosts}
+						profile={profile}
+					/>
 
 					{/* Feed */}
 					<Feed posts={posts} userId={userId} onReactionUpdate={fetchPosts} />
@@ -370,6 +283,14 @@ export default function StudentDashboard() {
 					</div>
 				</aside>
 			</div>
+
+			{/* QR Code Modal */}
+			<QRCodeModal
+				isOpen={qrModalOpen}
+				onClose={() => setQrModalOpen(false)}
+				userId={userId}
+				userProfile={profile}
+			/>
 		</div>
 	);
 }

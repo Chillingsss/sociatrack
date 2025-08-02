@@ -207,20 +207,20 @@ export default function LoginPage() {
 						</div>
 
 						{/* Login Card */}
-						<div className="p-10 bg-white rounded-3xl border border-green-100 shadow-2xl">
-							<div className="mb-10 text-center">
-								<h2 className="mb-3 text-3xl font-bold text-green-900">
+						<div className="p-6 bg-white rounded-3xl border border-green-100 shadow-2xl sm:p-8">
+							<div className="mb-8 text-center">
+								<h2 className="mb-3 text-2xl font-bold text-green-900 sm:text-3xl">
 									Welcome Back
 								</h2>
-								<p className="text-green-600 text-md">
+								<p className="text-sm text-green-600 sm:text-md">
 									Please sign in to your account
 								</p>
 							</div>
 
 							{/* Error Message */}
 							{error && (
-								<div className="flex items-start p-5 mb-8 space-x-3 bg-red-50 rounded-2xl border border-red-200">
-									<AlertCircle className="w-6 h-6 text-red-500 mt-0.5 flex-shrink-0" />
+								<div className="flex items-start p-4 mb-6 space-x-3 bg-red-50 rounded-2xl border border-red-200">
+									<AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
 									<div>
 										<p className="text-sm font-medium text-red-800">
 											Login Failed
@@ -230,8 +230,8 @@ export default function LoginPage() {
 								</div>
 							)}
 
-							<form onSubmit={handleSubmit} className="space-y-8">
-								<div className="space-y-3">
+							<form onSubmit={handleSubmit} className="space-y-6">
+								<div className="space-y-2">
 									<Label
 										htmlFor="username"
 										className="text-sm font-semibold text-green-800"
@@ -248,14 +248,14 @@ export default function LoginPage() {
 												setError("");
 											}}
 											placeholder="Enter your username"
-											className="px-6 py-5 pl-14 w-full placeholder-green-400 text-green-900 rounded-2xl border-2 border-green-200 transition-all duration-200 text-md bg-green-50/50 focus:outline-none focus:ring-4 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
+											className="px-4 py-4 pl-12 w-full placeholder-green-400 text-green-900 rounded-2xl border-2 border-green-200 transition-all duration-200 bg-green-50/50 focus:outline-none focus:ring-4 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
 											required
 										/>
-										<Mail className="absolute left-5 top-1/2 w-5 h-5 text-green-500 transform -translate-y-1/2" />
+										<Mail className="absolute left-4 top-1/2 w-5 h-5 text-green-500 transform -translate-y-1/2" />
 									</div>
 								</div>
 
-								<div className="space-y-3">
+								<div className="space-y-2">
 									<Label
 										htmlFor="password"
 										className="text-sm font-semibold text-green-800"
@@ -272,14 +272,14 @@ export default function LoginPage() {
 												setError("");
 											}}
 											placeholder="Enter your password"
-											className="px-6 py-5 pr-14 pl-14 w-full placeholder-green-400 text-green-900 rounded-2xl border-2 border-green-200 transition-all duration-200 text-md bg-green-50/50 focus:outline-none focus:ring-4 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
+											className="px-4 py-4 pr-12 pl-12 w-full placeholder-green-400 text-green-900 rounded-2xl border-2 border-green-200 transition-all duration-200 bg-green-50/50 focus:outline-none focus:ring-4 focus:ring-green-300/30 focus:border-green-400 focus:bg-white hover:border-green-300"
 											required
 										/>
-										<LockKeyhole className="absolute left-5 top-1/2 w-5 h-5 text-green-500 transform -translate-y-1/2" />
+										<LockKeyhole className="absolute left-4 top-1/2 w-5 h-5 text-green-500 transform -translate-y-1/2" />
 										<button
 											type="button"
 											onClick={() => setShowPassword(!showPassword)}
-											className="absolute right-5 top-1/2 text-green-500 transition-colors transform -translate-y-1/2 hover:text-green-700"
+											className="absolute right-4 top-1/2 text-green-500 transition-colors transform -translate-y-1/2 hover:text-green-700"
 										>
 											{showPassword ? (
 												<EyeOff className="w-5 h-5" />
@@ -292,7 +292,7 @@ export default function LoginPage() {
 
 								{/* CAPTCHA Component */}
 								{showCaptcha && (
-									<div className="p-6 rounded-2xl border-2 border-green-200 bg-green-50/30">
+									<div className="p-3 rounded-xl border-2 border-green-200 bg-green-50/30">
 										<Captcha
 											onVerify={handleCaptchaVerify}
 											error={captchaError}
@@ -302,7 +302,7 @@ export default function LoginPage() {
 
 								<Button
 									type="submit"
-									className={`w-full py-5 px-8 rounded-2xl font-semibold text-md transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-400/30 ${
+									className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-400/30 ${
 										showCaptcha && !captchaVerified
 											? "bg-green-300 text-green-600 cursor-not-allowed"
 											: "bg-gradient-to-r from-green-700 via-emerald-700 to-green-800 text-white hover:from-green-800 hover:via-emerald-800 hover:to-green-900 shadow-xl hover:shadow-2xl"
@@ -311,7 +311,7 @@ export default function LoginPage() {
 								>
 									{isLoading ? (
 										<div className="flex justify-center items-center space-x-3">
-											<div className="w-6 h-6 rounded-full border-white animate-spin border-3 border-t-transparent" />
+											<div className="w-5 h-5 rounded-full border-2 border-white animate-spin border-t-transparent" />
 											<span>Signing in...</span>
 										</div>
 									) : showCaptcha && !captchaVerified ? (
@@ -319,18 +319,18 @@ export default function LoginPage() {
 									) : showCaptcha && captchaVerified ? (
 										<div className="flex justify-center items-center space-x-3">
 											<span>Sign In</span>
-											<ArrowRight className="w-5 h-5" />
+											<ArrowRight className="w-4 h-4" />
 										</div>
 									) : (
 										<div className="flex justify-center items-center space-x-3">
 											<span>Sign In</span>
-											<ArrowRight className="w-5 h-5" />
+											<ArrowRight className="w-4 h-4" />
 										</div>
 									)}
 								</Button>
 							</form>
 
-							<div className="mt-10 text-center">
+							<div className="mt-8 text-center">
 								<a
 									href="#"
 									className="font-medium text-green-600 transition-colors hover:text-green-800 hover:underline"

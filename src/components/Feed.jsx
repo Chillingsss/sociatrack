@@ -711,8 +711,6 @@ export default function Feed({ posts, userId, onReactionUpdate }) {
 	// Handle dropdown menu
 	const handleDropdownToggle = (postId) => {
 		setShowDropdown(showDropdown === postId ? null : postId);
-
-		setShowDropdown(showDropdown === postId ? null : postId);
 	};
 
 	// Handle edit post with proper event handling
